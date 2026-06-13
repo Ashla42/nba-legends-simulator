@@ -563,11 +563,93 @@
   }
 
   @media (max-width: 600px) {
-    .roster-slots { grid-template-columns: repeat(3, 1fr); }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); }
-    .bracket-grid { grid-template-columns: 1fr 1fr; }
-    .move-option-grid { grid-template-columns: 1fr; }
-    .site-header h1 { font-size: 36px; }
+    /* Layout */
+    #app { padding: 0.75rem 0.75rem 4rem; }
+
+    /* Header */
+    .site-header { padding: 1.25rem 0 1rem; margin-bottom: 1.25rem; }
+    .site-header h1 { font-size: 30px; letter-spacing: 1px; }
+    .site-header .subtitle { font-size: 11px; letter-spacing: 2px; }
+
+    /* Draft screen: single column, reordered via flex */
+    .draft-layout {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 1.25rem !important;
+    }
+    /* Hide the two-col grid on mobile — we use flex order instead */
+    .draft-col-left  { order: 5; }  /* player grid goes last */
+    .draft-col-right { order: 1; display: flex; flex-direction: column; gap: 0; }
+
+    /* Player grid: 2 columns on mobile */
+    .player-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      max-height: 360px;
+    }
+    .player-card { font-size: 13px; }
+    .player-name { font-size: 14px; }
+    .player-pts  { font-size: 18px; }
+
+    /* Roster slots: 5 across but smaller */
+    .roster-slots { grid-template-columns: repeat(5, 1fr) !important; gap: 5px; }
+    .roster-slot  { min-height: 70px; padding: 6px 4px; }
+    .roster-slot .slot-name { font-size: 11px; }
+    .roster-slot .slot-pts  { font-size: 10px; }
+    .roster-slot .slot-remove { font-size: 10px; }
+
+    /* Budget bar */
+    .budget-value { font-size: 22px; }
+
+    /* Tier legend: horizontal scroll */
+    .tier-legend { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+    .tier-legend::-webkit-scrollbar { display: none; }
+
+    /* Filters: wrap naturally */
+    .filter-row { gap: 6px; }
+    .filter-row input  { min-width: 100%; }
+    .filter-row select { flex: 1; font-size: 12px; padding: 6px 8px; }
+
+    /* Stat grid: 2 cols */
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-box .sval { font-size: 22px; }
+
+    /* Offseason choice cards: stack vertically */
+    .os-move-cards { grid-template-columns: 1fr !important; gap: 10px; }
+    .os-move-card { padding: 1rem; display: flex; gap: 12px; align-items: flex-start; }
+    .os-move-card .os-icon { font-size: 24px; margin-bottom: 0; flex-shrink: 0; margin-top: 2px; }
+    .os-move-card h3 { font-size: 18px; margin-bottom: 4px; }
+    .os-move-card p  { font-size: 13px; }
+
+    /* Offseason roster pick pills: 3 across */
+    .os-roster-pick { grid-template-columns: repeat(3, 1fr) !important; }
+
+    /* Result hero */
+    .result-trophy { font-size: 48px; }
+    .result-title  { font-size: 30px; letter-spacing: 1px; }
+    .result-sub    { font-size: 14px; }
+
+    /* Standings: compact */
+    .standings-row { padding: 5px 8px !important; }
+    .standings-rank { font-size: 14px !important; width: 20px !important; }
+    .standings-name { font-size: 12px !important; }
+    .standings-round { font-size: 10px !important; }
+    .standings-rating { font-size: 13px !important; }
+
+    /* Two-col result layout: stack */
+    .result-two-col { grid-template-columns: 1fr !important; }
+
+    /* Bracket: horizontal scroll, no shrinking */
+    .bk-wrap { margin: 0 -0.75rem; padding: 0 0.75rem; }
+
+    /* Matchup panel stats table */
+    .matchup-stats-table { font-size: 12px; }
+
+    /* Buttons: full width */
+    .section-actions { flex-direction: column; }
+    .section-actions .btn { width: 100%; text-align: center; }
+
+    /* Cards: tighter padding */
+    .card { padding: 1rem; }
   }
 
   /* ── VISUAL BRACKET ── */
@@ -681,8 +763,8 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;">
-      <div>
+    <div class="draft-layout" style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;">
+      <div class="draft-col-left">
         <div class="card-title">Draft Pool</div>
         <div style="margin-bottom:10px;">
           <div class="tier-legend">
@@ -726,7 +808,7 @@
         <div class="player-grid" id="player-grid"></div>
       </div>
 
-      <div>
+      <div class="draft-col-right">
         <div class="card-title">Your Roster</div>
         <div class="roster-slots" id="roster-display" style="grid-template-columns:1fr 1fr 1fr;"></div>
 
@@ -773,7 +855,7 @@
         <div class="synergy-list" id="synergy-list"></div>
 
         <div class="section-actions" style="margin-top:1.5rem;">
-          <button class="btn btn-primary" id="start-playoffs-btn" onclick="startPlayoffs()" disabled>
+          <button class="btn btn-primary" id="start-playoffs-btn" onclick="startPlayoffs()" disabled style="width:100%;">
             Start Season 1 of 5 →
           </button>
         </div>
@@ -2611,13 +2693,13 @@ function showResults() {
   };
 
   const standingsHTML = allTeams.map((t, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:${t.isUser?'var(--accent-light)':'var(--bg3)'};margin-bottom:4px;border:1px solid ${t.isUser?'rgba(37,99,235,0.2)':'var(--border)'}">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text-muted);width:24px;text-align:center">${i+1}</div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:${t.isUser?'600':'400'};color:${t.isUser?'var(--accent)':'var(--text)'}">${t.name}</div>
-        <div style="font-size:11px;color:var(--text-dim)">${roundLabel(t.roundsReached)}</div>
+    <div class="standings-row" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:${t.isUser?'var(--accent-light)':'var(--bg3)'};margin-bottom:4px;border:1px solid ${t.isUser?'rgba(37,99,235,0.2)':'var(--border)'}">
+      <div class="standings-rank" style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text-muted);width:24px;text-align:center;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="standings-name" style="font-size:14px;font-weight:${t.isUser?'600':'400'};color:${t.isUser?'var(--accent)':'var(--text)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
+        <div class="standings-round" style="font-size:11px;color:var(--text-dim)">${roundLabel(t.roundsReached)}</div>
       </div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text-muted)">${t.rating.toFixed ? t.rating.toFixed(1) : t.rating}</div>
+      <div class="standings-rating" style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text-muted);flex-shrink:0">${t.rating.toFixed ? t.rating.toFixed(1) : t.rating}</div>
     </div>`).join('');
 
   // ── PLAYER PROGRESSION ───────────────────────────────────────
@@ -2717,7 +2799,7 @@ function showResults() {
 
     ${lossAnalysis}
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+    <div class="result-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
       <div class="card">
         <div class="card-title">Playoff Run</div>
         ${roundSummary}
