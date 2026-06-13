@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NBA Legends Playoff Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #F7F6F3;
+    --bg2:      #FFFFFF;
+    --bg3:      #EEECEA;
+    --bg4:      #E5E3DF;
+    --surface:  #FFFFFF;
+    --surface2: #F7F6F3;
+    --surface3: #EEECEA;
+    --border:   rgba(0,0,0,0.09);
+    --border-bright: rgba(0,0,0,0.18);
+    --text:     #1A1917;
+    --text-muted: #6B6760;
+    --text-dim: #9E9B96;
+    --accent:   #2563EB;
+    --accent-light: #EFF4FD;
+    --green:    #16A34A;
+    --green-bg: #DCFCE7;
+    --red:      #DC2626;
+    --red-bg:   #FEE2E2;
+    --amber:    #D97706;
+    --amber-bg: #FEF3C7;
+    /* tier colors — vivid but not aggressive */
+    --tier1:    #B91C1C;
+    --tier1-bg: #FEE2E2;
+    --tier2:    #C2410C;
+    --tier2-bg: #FFEDD5;
+    --tier3:    #92400E;
+    --tier3-bg: #FEF3C7;
+    --tier4:    #166534;
+    --tier4-bg: #DCFCE7;
+    --tier5:    #1D4ED8;
+    --tier5-bg: #DBEAFE;
+    --tier6:    #4B5563;
+    --tier6-bg: #F3F4F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .display { font-family: 'Barlow Condensed', sans-serif; }
+
+  /* LAYOUT */
+  #app { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* HEADER */
+  .site-header {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .site-header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1;
+  }
+  .site-header .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+  .card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    border: 1.5px solid var(--border-bright);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn:hover { background: var(--bg3); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn:disabled:hover { background: transparent; }
+  .btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn-primary:hover { background: #333; border-color: #333; color: #fff; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red-bg); }
+  .btn-sm { font-size: 13px; padding: 6px 14px; letter-spacing: 1px; }
+
+  /* BUDGET BAR */
+  .budget-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .budget-labels { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .budget-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .budget-value { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 900; color: var(--text); }
+  .budget-track { background: var(--bg4); border-radius: 4px; height: 8px; overflow: hidden; }
+  .budget-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.3s, background 0.3s; }
+  .budget-fill.warn { background: var(--amber); }
+  .budget-fill.over { background: var(--red); }
+
+  /* TIER LEGEND */
+  .tier-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .tier-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 4px;
+  }
+  .t1 { background: var(--tier1-bg); color: var(--tier1); border: 1px solid rgba(185,28,28,0.25); }
+  .t2 { background: var(--tier2-bg); color: var(--tier2); border: 1px solid rgba(194,65,12,0.25); }
+  .t3 { background: var(--tier3-bg); color: var(--tier3); border: 1px solid rgba(146,64,14,0.25); }
+  .t4 { background: var(--tier4-bg); color: var(--tier4); border: 1px solid rgba(22,101,52,0.25); }
+  .t5 { background: var(--tier5-bg); color: var(--tier5); border: 1px solid rgba(29,78,216,0.25); }
+  .t6 { background: var(--tier6-bg); color: var(--tier6); border: 1px solid rgba(75,85,99,0.25); }
+
+  /* PLAYER GRID */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .filter-row select, .filter-row input {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 12px;
+    font-size: 13px;
+    outline: none;
+  }
+  .filter-row input { flex: 1; min-width: 140px; }
+  .player-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 10px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .player-grid::-webkit-scrollbar { width: 4px; }
+  .player-grid::-webkit-scrollbar-track { background: var(--bg3); }
+  .player-grid::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .player-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .player-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .player-card.disabled { opacity: 0.35; cursor: not-allowed; }
+  .player-card.disabled:hover { border-color: var(--border); background: var(--surface); }
+  .player-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.1; margin-bottom: 2px; }
+  .player-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .player-pts { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; color: var(--text); }
+  .player-stats { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.6; }
+  .player-tier { position: absolute; top: 8px; right: 8px; }
+
+  /* ROSTER */
+  .roster-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 1.5rem; }
+  .roster-slot {
+    background: var(--bg3);
+    border: 1px dashed var(--border-bright);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .roster-slot.filled { border-style: solid; border-color: var(--accent); background: var(--accent-light); }
+  .roster-slot .slot-pos { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .roster-slot .slot-name { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .roster-slot .slot-pts { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .roster-slot .slot-remove { font-size: 11px; color: var(--red); cursor: pointer; margin-top: 4px; }
+  .roster-slot .slot-remove:hover { text-decoration: underline; }
+  .empty-label { font-size: 11px; color: var(--text-dim); }
+
+  /* SYNERGY PANEL */
+  .synergy-list { display: flex; flex-direction: column; gap: 8px; }
+  .synergy-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
+  .synergy-item.active { border-color: #16A34A; background: var(--green-bg); }
+  .synergy-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-bright); flex-shrink: 0; }
+  .synergy-item.active .synergy-dot { background: var(--green); }
+  .synergy-name { font-size: 13px; font-weight: 500; flex: 1; color: var(--text); }
+  .synergy-bonus { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; color: var(--green); }
+  .synergy-item:not(.active) .synergy-bonus { color: var(--text-dim); }
+
+  /* PLAYOFF BRACKET */
+  .bracket-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 0;
+    align-items: center;
+    margin: 1.5rem 0;
+  }
+  .bracket-round { display: flex; flex-direction: column; justify-content: space-around; padding: 0 6px; }
+  .bracket-round-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .matchup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 6px 0;
+  }
+  .matchup-team {
+    padding: 7px 10px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .matchup-team:first-child { border-bottom: 1px solid var(--border); }
+  .matchup-team.winner { background: var(--green-bg); font-weight: 600; color: var(--green); }
+  .matchup-team.loser { color: var(--text-dim); }
+  .matchup-team.user-team { font-weight: 600; color: var(--text); }
+  .matchup-score { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; }
+
+  /* SIMULATION */
+  .sim-log {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .sim-log::-webkit-scrollbar { width: 4px; }
+  .sim-log::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+  .log-entry { padding: 2px 0; }
+  .log-win { color: var(--green); font-weight: 500; }
+  .log-loss { color: var(--red); font-weight: 500; }
+  .log-round { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: 1px; margin-top: 10px; }
+  .log-game { color: var(--text-dim); }
+
+  /* RESULT PANEL */
+  .result-hero {
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .result-trophy { font-size: 64px; margin-bottom: 1rem; }
+  .result-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+  .result-sub { font-size: 15px; color: var(--text-muted); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1.5rem 0; }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-box .sval { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 900; color: var(--text); }
+  .stat-box .slbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* MOVES */
+  .moves-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 1.25rem; }
+  .move-pip { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent); background: var(--accent); }
+  .move-pip.spent { background: transparent; border-color: var(--border-bright); }
+  .moves-label { font-size: 13px; color: var(--text-muted); margin-left: 8px; }
+
+  .move-option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1rem 0; }
+  .move-option {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .move-option:hover { border-color: var(--accent); background: var(--accent-light); }
+  .move-option.selected-move { border-color: var(--accent); background: var(--accent-light); }
+  .move-option h4 { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .move-option p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .move-cost { display: inline-block; font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-bg); border: 1px solid rgba(217,119,6,0.25); border-radius: 4px; padding: 2px 7px; margin-top: 8px; }
+
+  /* SECTION NAV */
+  .section-actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
+
+  /* OPPONENT CARD */
+  .opp-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .opp-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); }
+  .opp-era { font-size: 12px; color: var(--text-muted); }
+  .opp-rating { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; color: var(--text-muted); }
+
+  /* UTILS */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .text-center { text-align: center; }
+  .mt1 { margin-top: 0.75rem; }
+  .mt2 { margin-top: 1.5rem; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-muted);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
+
+  /* ── OFFSEASON WIZARD ── */
+  .os-progress {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 1.75rem;
+  }
+  .os-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .os-dot.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .os-dot.done {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-bg);
+  }
+  .os-dot.skipped {
+    border-color: var(--border-bright);
+    color: var(--text-dim);
+    background: var(--bg3);
+  }
+  .os-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border-bright);
+  }
+
+  .os-move-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 1.5rem;
+  }
+  .os-move-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .os-move-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .os-move-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .os-move-card .os-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  .os-move-card h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .os-move-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .os-move-tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid rgba(37,99,235,0.2);
+  }
+
+  .os-detail { margin-top: 1.25rem; }
+  .os-detail-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .os-roster-pick {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .os-player-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .os-player-pill:hover { border-color: var(--accent); background: var(--accent-light); }
+  .os-player-pill.selected { border-color: var(--accent); background: var(--accent-light); }
+  .os-player-pill .pname {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .os-player-pill .pmeta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .os-player-pill .pval { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 900; color: var(--text-muted); margin-top: 3px; }
+
+  .os-confirm-banner {
+    background: var(--accent-light);
+    border: 1px solid rgba(37,99,235,0.25);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .os-confirm-banner strong { color: var(--accent); }
+
+  /* ── offseason action cards ── */
+  .os-action-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+  .os-action-card.os-done {
+    background: var(--bg3);
+    border-color: var(--border);
+    opacity: 0.75;
+  }
+  .os-action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .os-action-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .os-action-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 420px;
+    line-height: 1.4;
+  }
+  .os-done-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    background: var(--green-bg);
+    border: 1px solid rgba(22,163,74,0.2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  @media (max-width: 600px) {
+    .roster-slots { grid-template-columns: repeat(3, 1fr); }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .bracket-grid { grid-template-columns: 1fr 1fr; }
+    .move-option-grid { grid-template-columns: 1fr; }
+    .site-header h1 { font-size: 36px; }
+  }
+
+  /* ── VISUAL BRACKET ── */
+  .bk-wrap { overflow-x: auto; }
+  .bk-labels {
+    display: grid;
+    grid-template-columns: 220px 28px 220px 28px 220px 28px 220px;
+    margin-bottom: 8px;
+  }
+  .bk-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .bk-body {
+    display: grid;
+    grid-template-columns: 220px 28px 220px 28px 220px 28px 220px;
+    align-items: center;
+    min-width: 700px;
+  }
+  .bk-col { display: flex; flex-direction: column; }
+  .bk-col-r1 { gap: 0; }
+  .bk-col-r2 { gap: 0; }
+  .bk-slot { display: flex; align-items: center; }
+  .bk-slot-top { flex: 1; padding-bottom: 8px; align-items: flex-end; }
+  .bk-slot-bot { flex: 1; padding-top: 8px; align-items: flex-start; }
+  .bk-slot-only { flex: 1; align-items: center; justify-content: center; }
+
+  .bk-matchup {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .bk-dim { opacity: 0.32; }
+  .bk-team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bk-team:last-child { border-bottom: none; }
+  .bk-tname { font-weight: 500; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bk-score { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-muted); margin-left: 8px; flex-shrink: 0; }
+  .bk-user .bk-tname { font-weight: 700; color: var(--accent); }
+  .bk-winner { background: var(--green-bg); }
+  .bk-winner .bk-tname { color: var(--green); font-weight: 700; }
+  .bk-winner .bk-score { color: var(--green); }
+  .bk-loser .bk-tname { color: var(--text-dim); }
+  .bk-loser .bk-score { color: var(--text-dim); }
+
+  /* Connector columns */
+  .bk-conn {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    position: relative;
+  }
+  .bk-conn-top {
+    flex: 1;
+    border-right: 2px solid var(--border-bright);
+    border-bottom: 2px solid var(--border-bright);
+    border-bottom-right-radius: 6px;
+  }
+  .bk-conn-mid {
+    width: 50%;
+    height: 2px;
+    background: var(--border-bright);
+    align-self: flex-end;
+  }
+  .bk-conn-bot {
+    flex: 1;
+    border-right: 2px solid var(--border-bright);
+    border-top: 2px solid var(--border-bright);
+    border-top-right-radius: 6px;
+  }
+  .bk-conn-single { align-items: center; justify-content: center; }
+  .bk-conn-straight {
+    width: 100%;
+    height: 2px;
+    background: var(--border-bright);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="site-header">
+    <h1 class="display">NBA Legends Playoff Simulator</h1>
+    <p class="subtitle">Build your dynasty · Conquer the bracket</p>
+  </div>
+
+  <!-- ===== SCREEN 1: DRAFT ===== -->
+  <div id="screen-draft" class="screen active">
+    <div class="budget-bar-wrap">
+      <div class="budget-labels">
+        <span class="budget-label">Team budget used</span>
+        <span class="budget-value" id="budget-display">0 / 300 pts</span>
+      </div>
+      <div class="budget-track"><div class="budget-fill" id="budget-fill" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:13px;color:var(--text-dim)">
+        <span id="budget-slots">0 / 5 selected</span>
+        <span>Remaining: <strong id="budget-remaining" style="color:var(--accent)">300 pts</strong></span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;">
+      <div>
+        <div class="card-title">Draft Pool</div>
+        <div style="margin-bottom:10px;">
+          <div class="tier-legend">
+            <span class="tier-badge t1">Tier 1 · 90–100 pts · Max 1</span>
+            <span class="tier-badge t2">Tier 2 · 70–89 pts · Max 2</span>
+            <span class="tier-badge t3">Tier 3 · 50–69 pts</span>
+            <span class="tier-badge t4">Tier 4 · 30–49 pts</span>
+            <span class="tier-badge t5">Tier 5 · 10–29 pts</span>
+            <span class="tier-badge t6">Tier 6 · &lt;10 pts · Budget savers</span>
+          </div>
+        </div>
+        <div class="filter-row">
+          <input type="text" id="search-input" placeholder="Search players…" oninput="filterPlayers()">
+          <select id="pos-filter" onchange="filterPlayers()">
+            <option value="">All positions</option>
+            <option value="PG">PG</option>
+            <option value="SG">SG</option>
+            <option value="SF">SF</option>
+            <option value="PF">PF</option>
+            <option value="C">C</option>
+          </select>
+          <select id="decade-filter" onchange="filterPlayers()">
+            <option value="">All eras</option>
+            <option value="60s">1960s</option>
+            <option value="70s">1970s</option>
+            <option value="80s">1980s</option>
+            <option value="90s">1990s</option>
+            <option value="00s">2000s</option>
+            <option value="10s">2010s</option>
+            <option value="20s">2020s</option>
+          </select>
+          <select id="sort-filter" onchange="filterPlayers()">
+            <option value="pts_val">Sort: Overall</option>
+            <option value="pts">Sort: PPG</option>
+            <option value="reb">Sort: Rebounds</option>
+            <option value="ast">Sort: Assists</option>
+            <option value="stl">Sort: Steals</option>
+            <option value="blk">Sort: Blocks</option>
+          </select>
+        </div>
+        <div class="player-grid" id="player-grid"></div>
+      </div>
+
+      <div>
+        <div class="card-title">Your Roster</div>
+        <div class="roster-slots" id="roster-display" style="grid-template-columns:1fr 1fr 1fr;"></div>
+
+        <!-- Persistent penalty flags — always visible, updated on every pick -->
+        <div id="draft-penalties" style="display:none;margin-bottom:1rem;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Stat adjustments</div>
+          <div id="draft-penalty-rows"></div>
+        </div>
+
+        <div class="card-title mt2">Team Identity</div>
+        <div style="margin-bottom:1rem;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <div id="team-logo-display" style="font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer;flex-shrink:0;" onclick="toggleLogoPicker()">🏀</div>
+            <input type="text" id="team-name-input" value="My All-Stars" maxlength="24"
+              oninput="state.teamName=this.value;updateTeamNameDisplays()"
+              style="flex:1;background:var(--surface);border:1px solid var(--border-bright);border-radius:6px;color:var(--text);padding:7px 12px;font-size:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.5px;">
+          </div>
+          <div id="logo-picker" style="display:none;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Pick a logo</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <span onclick="selectLogo('🏀')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🏀</span>
+              <span onclick="selectLogo('🔥')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🔥</span>
+              <span onclick="selectLogo('⚡')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">⚡</span>
+              <span onclick="selectLogo('🐂')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐂</span>
+              <span onclick="selectLogo('🦅')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦅</span>
+              <span onclick="selectLogo('🦁')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦁</span>
+              <span onclick="selectLogo('🐺')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐺</span>
+              <span onclick="selectLogo('🦊')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦊</span>
+              <span onclick="selectLogo('🐯')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐯</span>
+              <span onclick="selectLogo('🦈')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦈</span>
+              <span onclick="selectLogo('🐉')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐉</span>
+              <span onclick="selectLogo('🏆')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🏆</span>
+              <span onclick="selectLogo('💎')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">💎</span>
+              <span onclick="selectLogo('🌟')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🌟</span>
+              <span onclick="selectLogo('🗡️')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🗡️</span>
+              <span onclick="selectLogo('🛡️')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🛡️</span>
+              <span onclick="selectLogo('🎯')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🎯</span>
+              <span onclick="selectLogo('👑')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">👑</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-title mt2">Synergies</div>
+        <div class="synergy-list" id="synergy-list"></div>
+
+        <div class="section-actions" style="margin-top:1.5rem;">
+          <button class="btn btn-primary" id="start-playoffs-btn" onclick="startPlayoffs()" disabled>
+            Start Season 1 of 5 →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: BRACKET / SIM ===== -->
+  <div id="screen-playoffs" class="screen">
+    <div style="margin-bottom:1.5rem;">
+      <div class="card-title" style="margin-bottom:4px;">Playoff Bracket</div>
+      <div style="font-size:14px;color:var(--text-muted)">Season <span id="season-num">1</span> of 5 — simulate each round, then manage your roster in the offseason</div>
+    </div>
+
+    <div id="bracket-container"></div>
+
+    <div class="card mt2" id="current-matchup-card" style="display:none;">
+      <div class="card-title" id="matchup-title">Current Matchup</div>
+      <div id="matchup-content"></div>
+      <div class="section-actions">
+        <button class="btn btn-primary" id="simulate-btn" onclick="simulateCurrentRound()">Simulate Round →</button>
+      </div>
+    </div>
+
+    <div class="card mt2" id="sim-log-card" style="display:none;">
+      <div class="card-title">Game Log</div>
+      <div class="sim-log" id="sim-log"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 3: SEASON RESULTS ===== -->
+  <div id="screen-results" class="screen">
+    <div id="result-content"></div>
+    <div class="section-actions" style="justify-content:center;margin-top:2rem;gap:16px;" id="result-actions">
+      <button class="btn btn-primary" id="btn-offseason" onclick="startOffseason()">Enter the Offseason →</button>
+      <button class="btn" onclick="resetGame()">Start Over — New Team</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 4: OFFSEASON WIZARD ===== -->
+  <div id="screen-offseason" class="screen">
+    <div style="margin-bottom:1.5rem;">
+      <div class="card-title" style="margin-bottom:4px;">Offseason</div>
+      <div style="font-size:14px;color:var(--text-muted)" id="os-header-sub">Choose one action — Swap or Train. You can't do both.</div>
+    </div>
+
+    <div id="os-step-content"></div>
+
+    <div class="section-actions" style="margin-top:1.5rem;">
+      <button class="btn btn-primary" id="os-next-season-btn" onclick="startNextSeason()" style="display:none;">Start Next Season →</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const PLAYERS = [
+  // ── TIER 1 (90-100pts) — The GOATs ─────────────────────────────────────
+  // PG
+  {id:1,name:"Magic Johnson",pos:"PG",decade:"80s",team:"Lakers",pts_val:93,tier:1,pts:19.5,reb:7.2,ast:11.2,stl:1.9,blk:0.4,note:"5x Champion, 3x MVP"},
+  {id:2,name:"Oscar Robertson",pos:"PG",decade:"60s",team:"Royals/Bucks",pts_val:90,tier:1,pts:25.7,reb:7.5,ast:9.5,stl:0.0,blk:0.0,note:"Triple-double season 1961-62"},
+  // SG
+  {id:3,name:"Michael Jordan",pos:"SG",decade:"90s",team:"Bulls",pts_val:100,tier:1,pts:30.1,reb:6.2,ast:5.3,stl:2.3,blk:0.8,note:"6x Champion, 6x Finals MVP"},
+  {id:4,name:"Jerry West",pos:"SG",decade:"60s",team:"Lakers",pts_val:91,tier:1,pts:27.0,reb:5.8,ast:6.7,stl:0.0,blk:0.0,note:"The Logo, 14x All-Star"},
+  // SF
+  {id:5,name:"LeBron James",pos:"SF",decade:"10s",team:"Lakers/Heat/Cavs",pts_val:97,tier:1,pts:27.2,reb:7.5,ast:7.3,stl:1.6,blk:0.8,note:"4x Champion, 4x MVP"},
+  {id:6,name:"Elgin Baylor",pos:"SF",decade:"60s",team:"Lakers",pts_val:90,tier:1,pts:27.4,reb:13.5,ast:4.3,stl:0.0,blk:0.0,note:"11x All-NBA First Team"},
+  // PF
+  {id:7,name:"Karl Malone",pos:"PF",decade:"90s",team:"Jazz",pts_val:91,tier:1,pts:25.0,reb:10.1,ast:3.6,stl:1.4,blk:0.8,note:"2x MVP, 14x All-Star"},
+  {id:8,name:"Bob Pettit",pos:"PF",decade:"60s",team:"Hawks",pts_val:90,tier:1,pts:26.4,reb:16.2,ast:3.0,stl:0.0,blk:0.0,note:"2x MVP, 1958 Champion"},
+  // C
+  {id:9,name:"Kareem Abdul-Jabbar",pos:"C",decade:"70s",team:"Bucks/Lakers",pts_val:95,tier:1,pts:24.6,reb:11.2,ast:3.6,stl:0.9,blk:2.6,note:"6x MVP, 6x Champion"},
+  {id:10,name:"Wilt Chamberlain",pos:"C",decade:"60s",team:"Warriors/76ers",pts_val:94,tier:1,pts:30.1,reb:22.9,ast:4.4,stl:0.0,blk:0.0,note:"4x scoring title, 2x Champion"},
+  {id:11,name:"Bill Russell",pos:"C",decade:"60s",team:"Celtics",pts_val:92,tier:1,pts:15.1,reb:22.5,ast:4.3,stl:0.0,blk:0.0,note:"11x Champion, 5x MVP"},
+
+  // ── TIER 2 (70-89pts) ──────────────────────────────────────────────────
+  // PG
+  {id:12,name:"Stephen Curry",pos:"PG",decade:"10s",team:"Warriors",pts_val:83,tier:2,pts:24.7,reb:4.6,ast:6.4,stl:1.7,blk:0.2,note:"4x Champion, 2x MVP"},
+  {id:13,name:"Isiah Thomas",pos:"PG",decade:"80s",team:"Pistons",pts_val:76,tier:2,pts:19.2,reb:3.6,ast:9.3,stl:1.9,blk:0.2,note:"2x Champion, 2x Finals MVP"},
+  // SG
+  {id:14,name:"Kobe Bryant",pos:"SG",decade:"00s",team:"Lakers",pts_val:84,tier:2,pts:25.0,reb:5.2,ast:4.7,stl:1.4,blk:0.5,note:"5x Champion, 1x MVP"},
+  {id:15,name:"Dwyane Wade",pos:"SG",decade:"00s",team:"Heat",pts_val:73,tier:2,pts:22.0,reb:4.7,ast:5.4,stl:1.5,blk:0.8,note:"3x Champion, 1x Finals MVP"},
+  // SF
+  {id:16,name:"Larry Bird",pos:"SF",decade:"80s",team:"Celtics",pts_val:88,tier:2,pts:24.3,reb:10.0,ast:6.3,stl:1.7,blk:0.8,note:"3x Champion, 3x MVP"},
+  {id:17,name:"Kevin Durant",pos:"SF",decade:"10s",team:"Warriors/Nets",pts_val:82,tier:2,pts:27.2,reb:7.1,ast:4.1,stl:1.1,blk:1.1,note:"2x Champion, 2x Finals MVP"},
+  {id:18,name:"Julius Erving",pos:"SF",decade:"70s",team:"76ers",pts_val:76,tier:2,pts:22.0,reb:8.5,ast:4.2,stl:2.0,blk:1.7,note:"1x Champion, 4x ABA MVP"},
+  // PF
+  {id:19,name:"Giannis Antetokounmpo",pos:"PF",decade:"20s",team:"Bucks",pts_val:79,tier:2,pts:27.7,reb:11.7,ast:5.8,stl:1.1,blk:1.2,note:"1x Champion, 2x MVP"},
+  {id:20,name:"Charles Barkley",pos:"PF",decade:"90s",team:"Suns/76ers",pts_val:74,tier:2,pts:22.1,reb:11.7,ast:3.9,stl:1.5,blk:0.8,note:"1x MVP, 11x All-Star"},
+  // C
+  {id:21,name:"Shaquille O'Neal",pos:"C",decade:"00s",team:"Lakers/Heat",pts_val:87,tier:2,pts:23.7,reb:10.9,ast:2.5,stl:0.6,blk:2.3,note:"4x Champion, 3x Finals MVP"},
+  {id:22,name:"Hakeem Olajuwon",pos:"C",decade:"90s",team:"Rockets",pts_val:81,tier:2,pts:21.8,reb:11.1,ast:2.5,stl:1.7,blk:3.1,note:"2x Champion, 2x DPOY"},
+  {id:23,name:"Moses Malone",pos:"C",decade:"80s",team:"76ers/Rockets",pts_val:74,tier:2,pts:20.3,reb:12.2,ast:1.3,stl:0.8,blk:1.3,note:"3x MVP, 1x Champion"},
+  {id:24,name:"Nikola Jokic",pos:"C",decade:"20s",team:"Nuggets",pts_val:72,tier:2,pts:26.4,reb:11.8,ast:8.3,stl:1.4,blk:0.7,note:"1x Champion, 3x MVP"},
+
+  // ── TIER 3 (50-69pts) ──────────────────────────────────────────────────
+  // PG
+  {id:25,name:"Chris Paul",pos:"PG",decade:"10s",team:"Clippers/Rockets",pts_val:66,tier:3,pts:18.4,reb:4.5,ast:9.4,stl:2.1,blk:0.2,note:"12x All-Star, 4x assists leader"},
+  {id:26,name:"Gary Payton",pos:"PG",decade:"90s",team:"SuperSonics",pts_val:59,tier:3,pts:16.3,reb:4.3,ast:6.7,stl:2.1,blk:0.2,note:"DPOY 1996, 9x All-Defensive"},
+  {id:27,name:"Walt Frazier",pos:"PG",decade:"70s",team:"Knicks",pts_val:55,tier:3,pts:18.9,reb:5.9,ast:6.1,stl:1.8,blk:0.2,note:"2x Champion, 7x All-Defensive"},
+  {id:28,name:"Allen Iverson",pos:"PG",decade:"00s",team:"76ers",pts_val:54,tier:3,pts:26.7,reb:3.7,ast:6.2,stl:2.2,blk:0.2,note:"1x MVP, 4x scoring title"},
+  // SG
+  {id:29,name:"Clyde Drexler",pos:"SG",decade:"90s",team:"Blazers/Rockets",pts_val:62,tier:3,pts:20.4,reb:6.1,ast:5.6,stl:2.0,blk:0.7,note:"1x Champion, 10x All-Star"},
+  {id:30,name:"James Harden",pos:"SG",decade:"10s",team:"Rockets/Nets",pts_val:60,tier:3,pts:25.2,reb:5.2,ast:6.6,stl:1.5,blk:0.5,note:"1x MVP, 3x scoring title"},
+  {id:31,name:"Kawhi Leonard",pos:"SG",decade:"10s",team:"Spurs/Raptors",pts_val:53,tier:3,pts:17.7,reb:6.2,ast:2.6,stl:1.8,blk:0.6,note:"2x Champion, 2x Finals MVP"},
+  // SF
+  {id:32,name:"Scottie Pippen",pos:"SF",decade:"90s",team:"Bulls",pts_val:61,tier:3,pts:16.1,reb:6.4,ast:5.2,stl:2.0,blk:0.8,note:"6x Champion, 7x All-Defensive"},
+  {id:33,name:"John Havlicek",pos:"SF",decade:"70s",team:"Celtics",pts_val:58,tier:3,pts:20.8,reb:6.3,ast:4.8,stl:0.0,blk:0.0,note:"8x Champion, 4x All-NBA"},
+  {id:34,name:"Paul Pierce",pos:"SF",decade:"00s",team:"Celtics",pts_val:52,tier:3,pts:19.7,reb:5.8,ast:3.5,stl:1.3,blk:0.5,note:"1x Champion, 1x Finals MVP"},
+  {id:35,name:"Damian Lillard",pos:"SF",decade:"20s",team:"Trail Blazers/Bucks",pts_val:50,tier:3,pts:24.7,reb:4.2,ast:6.8,stl:0.9,blk:0.3,note:"7x All-Star, 2024 All-Star MVP"},
+  // PF
+  {id:36,name:"Tim Duncan",pos:"PF",decade:"00s",team:"Spurs",pts_val:85,tier:2,pts:19.0,reb:10.8,ast:3.0,stl:0.7,blk:2.2,note:"5x Champion, 2x MVP"},
+  {id:37,name:"Dirk Nowitzki",pos:"PF",decade:"00s",team:"Mavericks",pts_val:68,tier:3,pts:20.7,reb:8.7,ast:2.4,stl:0.8,blk:0.8,note:"1x Champion, 1x MVP"},
+  {id:38,name:"Kevin Garnett",pos:"PF",decade:"00s",team:"Timberwolves/Celtics",pts_val:57,tier:3,pts:17.8,reb:10.0,ast:3.7,stl:1.3,blk:1.4,note:"1x Champion, 1x MVP"},
+  {id:39,name:"Luka Doncic",pos:"PF",decade:"20s",team:"Mavericks",pts_val:55,tier:3,pts:28.4,reb:8.7,ast:8.7,stl:1.4,blk:0.5,note:"4x All-NBA First Team"},
+  // C
+  {id:40,name:"Patrick Ewing",pos:"C",decade:"90s",team:"Knicks",pts_val:63,tier:3,pts:21.0,reb:9.8,ast:1.9,stl:1.0,blk:2.4,note:"11x All-Star, 1985 #1 pick"},
+  {id:41,name:"David Robinson",pos:"C",decade:"90s",team:"Spurs",pts_val:58,tier:3,pts:21.1,reb:10.6,ast:2.5,stl:1.4,blk:3.0,note:"2x Champion, 1x MVP"},
+
+  // ── TIER 4 (30-49pts) ──────────────────────────────────────────────────
+  // PG
+  {id:42,name:"John Stockton",pos:"PG",decade:"90s",team:"Jazz",pts_val:42,tier:4,pts:13.1,reb:2.7,ast:10.5,stl:2.2,blk:0.2,note:"All-time assists + steals leader"},
+  {id:43,name:"Bob Cousy",pos:"PG",decade:"60s",team:"Celtics",pts_val:37,tier:4,pts:18.4,reb:5.2,ast:7.5,stl:0.0,blk:0.0,note:"6x Champion, 1957 MVP"},
+  {id:44,name:"Pete Maravich",pos:"PG",decade:"70s",team:"Jazz/Hawks",pts_val:36,tier:4,pts:24.2,reb:4.2,ast:5.4,stl:0.0,blk:0.0,note:"NCAA all-time scoring record"},
+  {id:45,name:"Tony Parker",pos:"PG",decade:"00s",team:"Spurs",pts_val:30,tier:4,pts:15.5,reb:2.7,ast:5.6,stl:0.7,blk:0.1,note:"4x Champion, 2007 Finals MVP"},
+  // SG
+  {id:46,name:"Ray Allen",pos:"SG",decade:"00s",team:"Celtics/Heat",pts_val:40,tier:4,pts:18.9,reb:4.1,ast:3.4,stl:1.1,blk:0.2,note:"2x Champion, all-time 3P record"},
+  {id:47,name:"Reggie Miller",pos:"SG",decade:"90s",team:"Pacers",pts_val:38,tier:4,pts:18.2,reb:3.0,ast:3.0,stl:1.1,blk:0.2,note:"5x All-Star, clutch 3P shooter"},
+  {id:48,name:"George Gervin",pos:"SG",decade:"70s",team:"Spurs",pts_val:35,tier:4,pts:26.2,reb:5.0,ast:2.7,stl:1.2,blk:0.8,note:"4x scoring title, Iceman"},
+  {id:49,name:"Manu Ginobili",pos:"SG",decade:"00s",team:"Spurs",pts_val:32,tier:4,pts:13.3,reb:3.5,ast:3.8,stl:1.4,blk:0.3,note:"4x Champion, GOAT off bench"},
+  // SF
+  {id:50,name:"Paul George",pos:"SF",decade:"10s",team:"Pacers/Thunder",pts_val:44,tier:4,pts:20.1,reb:6.4,ast:3.9,stl:2.1,blk:0.4,note:"6x All-Defensive, 9x All-Star"},
+  {id:51,name:"Dominique Wilkins",pos:"SF",decade:"80s",team:"Hawks",pts_val:38,tier:4,pts:24.8,reb:6.7,ast:2.5,stl:1.3,blk:0.5,note:"9x All-Star, Human Highlight Film"},
+  {id:52,name:"James Worthy",pos:"SF",decade:"80s",team:"Lakers",pts_val:34,tier:4,pts:17.6,reb:5.1,ast:3.0,stl:1.1,blk:0.7,note:"3x Champion, 1988 Finals MVP"},
+  {id:53,name:"Khris Middleton",pos:"SF",decade:"20s",team:"Bucks",pts_val:30,tier:4,pts:18.3,reb:5.4,ast:4.3,stl:1.1,blk:0.3,note:"1x Champion, 3x All-Star"},
+  // PF
+  {id:54,name:"Anthony Davis",pos:"PF",decade:"20s",team:"Lakers",pts_val:46,tier:4,pts:23.8,reb:10.4,ast:2.5,stl:1.3,blk:2.3,note:"1x Champion, 8x All-Star"},
+  {id:55,name:"Dennis Rodman",pos:"PF",decade:"90s",team:"Bulls/Pistons",pts_val:43,tier:4,pts:7.3,reb:13.1,ast:2.5,stl:0.7,blk:0.4,note:"5x Champion, 7x rebounding titles"},
+  {id:56,name:"Draymond Green",pos:"PF",decade:"10s",team:"Warriors",pts_val:38,tier:4,pts:8.9,reb:6.8,ast:6.1,stl:1.4,blk:1.1,note:"4x Champion, 2017 DPOY"},
+  {id:57,name:"Elvin Hayes",pos:"PF",decade:"70s",team:"Bullets/Rockets",pts_val:34,tier:4,pts:21.0,reb:12.5,ast:1.8,stl:1.1,blk:1.9,note:"1x Champion, 12x All-Star"},
+  // C
+  {id:58,name:"Willis Reed",pos:"C",decade:"70s",team:"Knicks",pts_val:42,tier:4,pts:18.7,reb:12.9,ast:1.8,stl:0.0,blk:0.0,note:"2x Champion, 1970 Finals MVP"},
+  {id:59,name:"Robert Parish",pos:"C",decade:"80s",team:"Celtics",pts_val:38,tier:4,pts:14.5,reb:9.1,ast:1.4,stl:0.7,blk:1.5,note:"4x Champion, Chief"},
+  {id:60,name:"Pau Gasol",pos:"C",decade:"00s",team:"Lakers/Spurs",pts_val:34,tier:4,pts:17.0,reb:9.4,ast:3.3,stl:0.6,blk:1.6,note:"2x Champion, 6x All-Star"},
+  {id:61,name:"Alonzo Mourning",pos:"C",decade:"90s",team:"Heat/Hornets",pts_val:30,tier:4,pts:17.1,reb:8.5,ast:1.1,stl:0.8,blk:2.8,note:"2x DPOY, 1x Champion"},
+
+  // ── TIER 5 (10-29pts) ──────────────────────────────────────────────────
+  // PG
+  {id:62,name:"Kyrie Irving",pos:"PG",decade:"10s",team:"Celtics/Nets",pts_val:28,tier:5,pts:23.2,reb:3.9,ast:5.7,stl:1.4,blk:0.4,note:"1x Champion, 7x All-Star"},
+  {id:63,name:"Steve Nash",pos:"PG",decade:"00s",team:"Suns/Mavericks",pts_val:24,tier:5,pts:14.3,reb:3.0,ast:8.5,stl:0.8,blk:0.1,note:"2x MVP, 8x All-Star"},
+  {id:64,name:"Rajon Rondo",pos:"PG",decade:"10s",team:"Celtics/Lakers",pts_val:18,tier:5,pts:10.9,reb:5.0,ast:8.6,stl:1.7,blk:0.2,note:"1x Champion, 4x assists leader"},
+  {id:65,name:"Chauncey Billups",pos:"PG",decade:"00s",team:"Pistons/Nuggets",pts_val:14,tier:5,pts:15.4,reb:3.2,ast:5.6,stl:1.2,blk:0.1,note:"1x Champion, 2004 Finals MVP"},
+  // SG
+  {id:66,name:"Joe Dumars",pos:"SG",decade:"80s",team:"Pistons",pts_val:26,tier:5,pts:16.1,reb:3.0,ast:4.7,stl:1.2,blk:0.2,note:"2x Champion, 1989 Finals MVP"},
+  {id:67,name:"Vince Carter",pos:"SG",decade:"00s",team:"Raptors/Nets",pts_val:22,tier:5,pts:16.7,reb:4.4,ast:3.1,stl:1.0,blk:0.5,note:"8x All-Star, Half-Man Half-Amazing"},
+  {id:68,name:"Tracy McGrady",pos:"SG",decade:"00s",team:"Rockets/Magic",pts_val:18,tier:5,pts:19.6,reb:5.6,ast:4.4,stl:1.3,blk:0.9,note:"2x scoring title, 7x All-Star"},
+  {id:69,name:"Klay Thompson",pos:"SG",decade:"10s",team:"Warriors",pts_val:14,tier:5,pts:19.5,reb:3.4,ast:2.2,stl:1.1,blk:0.5,note:"4x Champion, 5x All-Star"},
+  // SF
+  {id:70,name:"Chris Bosh",pos:"SF",decade:"10s",team:"Heat/Raptors",pts_val:22,tier:5,pts:17.7,reb:7.9,ast:2.1,stl:0.8,blk:1.0,note:"2x Champion, 11x All-Star"},
+  {id:71,name:"Grant Hill",pos:"SF",decade:"90s",team:"Pistons/Magic",pts_val:18,tier:5,pts:19.7,reb:6.8,ast:5.8,stl:1.4,blk:0.6,note:"6x All-Star, 1995 ROY Co-winner"},
+  {id:72,name:"Bob Dandridge",pos:"SF",decade:"70s",team:"Bucks/Bullets",pts_val:14,tier:5,pts:18.5,reb:6.4,ast:3.9,stl:1.5,blk:0.6,note:"2x Champion, 4x All-Star"},
+  {id:73,name:"Jayson Tatum",pos:"SF",decade:"20s",team:"Celtics",pts_val:12,tier:5,pts:23.0,reb:8.1,ast:4.6,stl:1.1,blk:0.7,note:"1x Champion, 5x All-Star"},
+  // PF
+  {id:74,name:"Gus Johnson",pos:"PF",decade:"60s",team:"Bullets",pts_val:20,tier:5,pts:17.0,reb:12.7,ast:2.5,stl:0.0,blk:0.0,note:"5x All-Star, fierce rebounder"},
+  {id:75,name:"Bobby Jones",pos:"PF",decade:"80s",team:"76ers",pts_val:16,tier:5,pts:9.4,reb:5.3,ast:2.3,stl:1.4,blk:1.0,note:"1x Champion, 1983 SWOY"},
+  {id:76,name:"Horace Grant",pos:"PF",decade:"90s",team:"Bulls/Magic",pts_val:12,tier:5,pts:11.3,reb:8.3,ast:2.7,stl:1.3,blk:0.9,note:"3x Champion, team glue"},
+  // C
+  {id:77,name:"Artis Gilmore",pos:"C",decade:"70s",team:"Bulls/Spurs",pts_val:26,tier:5,pts:17.1,reb:10.1,ast:2.3,stl:0.9,blk:2.3,note:"1x ABA Champion, HOF center"},
+  {id:78,name:"Bob McAdoo",pos:"C",decade:"70s",team:"Braves/Lakers",pts_val:22,tier:5,pts:22.1,reb:9.4,ast:2.2,stl:0.9,blk:2.1,note:"1x MVP, 3x scoring title"},
+  {id:79,name:"Nate Thurmond",pos:"C",decade:"60s",team:"Warriors/Bulls",pts_val:18,tier:5,pts:15.0,reb:15.0,ast:2.7,stl:0.0,blk:0.0,note:"7x All-Star, premier defender"},
+  {id:80,name:"Ben Wallace",pos:"C",decade:"00s",team:"Pistons",pts_val:14,tier:5,pts:5.7,reb:9.6,ast:1.3,stl:1.3,blk:2.5,note:"4x DPOY, 1x Champion"},
+
+  // ── TIER 6 (<10pts) — Budget Savers ────────────────────────────────────
+  // PG
+  {id:81,name:"Gary Neal",pos:"PG",decade:"10s",team:"Spurs",pts_val:5,tier:6,pts:9.2,reb:1.8,ast:2.1,stl:0.7,blk:0.1,note:"1x Champion, steady backup"},
+  {id:82,name:"Derek Fisher",pos:"PG",decade:"00s",team:"Lakers",pts_val:6,tier:6,pts:8.0,reb:2.3,ast:3.0,stl:0.9,blk:0.1,note:"5x Champion, clutch shooter"},
+  // SG
+  {id:83,name:"B.J. Armstrong",pos:"SG",decade:"90s",team:"Bulls",pts_val:5,tier:6,pts:11.1,reb:2.4,ast:3.4,stl:1.1,blk:0.1,note:"3x Champion, unsung hero"},
+  {id:84,name:"Mike Bibby",pos:"SG",decade:"00s",team:"Kings/Hawks",pts_val:6,tier:6,pts:13.7,reb:2.9,ast:5.2,stl:1.2,blk:0.2,note:"5x All-Star, Western Finals run"},
+  // SF
+  {id:85,name:"Ron Artest",pos:"SF",decade:"10s",team:"Lakers/Pacers",pts_val:7,tier:6,pts:13.0,reb:4.7,ast:2.7,stl:1.8,blk:0.4,note:"1x Champion, 1x DPOY"},
+  {id:86,name:"Luol Deng",pos:"SF",decade:"10s",team:"Bulls/Heat",pts_val:5,tier:6,pts:14.8,reb:5.9,ast:2.0,stl:1.2,blk:0.4,note:"2x All-Star, solid two-way wing"},
+  // PF
+  {id:87,name:"P.J. Tucker",pos:"PF",decade:"20s",team:"Bucks/Heat",pts_val:5,tier:6,pts:7.4,reb:5.5,ast:1.6,stl:1.0,blk:0.3,note:"1x Champion, lockdown defender"},
+  {id:88,name:"Elton Brand",pos:"PF",decade:"00s",team:"Clippers/Bulls",pts_val:7,tier:6,pts:18.1,reb:8.7,ast:1.9,stl:0.8,blk:1.8,note:"2x All-Star, quietly dominant"},
+  // C
+  {id:89,name:"Darryl Dawkins",pos:"C",decade:"70s",team:"76ers/Nets",pts_val:6,tier:6,pts:12.0,reb:6.1,ast:1.2,stl:0.6,blk:1.6,note:"Chocolate Thunder, backboard breaker"},
+  {id:90,name:"Rik Smits",pos:"C",decade:"90s",team:"Pacers",pts_val:5,tier:6,pts:14.8,reb:5.8,ast:1.4,stl:0.5,blk:1.3,note:"1x All-Star, Dunking Dutchman"},
+];
+
+const HISTORIC_TEAMS = [
+  {name:"1996 Chicago Bulls",era:"90s",rating:85,prob:0.95,key_players:["Jordan","Pippen","Rodman"],style:"lockdown defense + clutch offense"},
+  {name:"2016 Golden State Warriors",era:"10s",rating:84,prob:0.93,key_players:["Curry","Durant","Thompson"],style:"Splash Brothers fire 3s all night"},
+  {name:"1986 Boston Celtics",era:"80s",rating:81,prob:0.85,key_players:["Bird","McHale","Parish"],style:"frontcourt dominance, IQ basketball"},
+  {name:"1972 Los Angeles Lakers",era:"70s",rating:79,prob:0.80,key_players:["West","Chamberlain","Goodrich"],style:"dominant interior + clutch guard play"},
+  {name:"1985 Los Angeles Lakers",era:"80s",rating:78,prob:0.78,key_players:["Magic","Kareem","Worthy"],style:"Showtime fast-break offense"},
+  {name:"2001 Los Angeles Lakers",era:"00s",rating:78,prob:0.78,key_players:["Shaq","Kobe","Fisher"],style:"Shaq overpowers everyone inside"},
+  {name:"1967 Philadelphia 76ers",era:"60s",rating:77,prob:0.75,key_players:["Chamberlain","Baylor","Greer"],style:"Wilt statistically suffocates opponents"},
+  {name:"1971 Milwaukee Bucks",era:"70s",rating:76,prob:0.70,key_players:["Kareem","Oscar"],style:"young Kareem sky hook unstoppable"},
+  {name:"1982 Philadelphia 76ers",era:"80s",rating:75,prob:0.68,key_players:["Erving","Malone","Toney"],style:"Dr. J and Malone inside-out"},
+  {name:"1995 Houston Rockets",era:"90s",rating:74,prob:0.65,key_players:["Olajuwon","Drexler","Elie"],style:"Hakeem Dream Shake dismantles bigs"},
+  {name:"1993 Chicago Bulls",era:"90s",rating:73,prob:0.63,key_players:["Jordan","Pippen","Grant"],style:"Three-peat dynasty in full swing"},
+  {name:"2014 San Antonio Spurs",era:"10s",rating:73,prob:0.63,key_players:["Duncan","Parker","Ginobili"],style:"ball movement perfection, 27-pass assists"},
+  {name:"2013 Miami Heat",era:"10s",rating:72,prob:0.60,key_players:["LeBron","Wade","Bosh"],style:"LeBron peak, Big Three dominance"},
+  {name:"1999 San Antonio Spurs",era:"90s",rating:71,prob:0.58,key_players:["Duncan","Robinson","Elliott"],style:"Twin Towers shutdown defense"},
+  {name:"2008 Boston Celtics",era:"00s",rating:70,prob:0.55,key_players:["Garnett","Pierce","Allen"],style:"Big Three plus Rondo's tenacity"},
+  {name:"2004 Detroit Pistons",era:"00s",rating:69,prob:0.53,key_players:["Ben Wallace","Chauncey","Hamilton"],style:"team defense suffocates everyone"},
+  {name:"1977 Portland Trail Blazers",era:"70s",rating:68,prob:0.50,key_players:["Walton","Lucas","Hollins"],style:"Walton at his peak, Ramsay system"},
+  {name:"1989 Detroit Pistons",era:"80s",rating:67,prob:0.48,key_players:["Isiah","Dumars","Laimbeer"],style:"Bad Boys grind opponents down"},
+  {name:"1970 New York Knicks",era:"70s",rating:66,prob:0.45,key_players:["Reed","Frazier","Bradley"],style:"famed team defense and ball movement"},
+  {name:"2011 Dallas Mavericks",era:"10s",rating:66,prob:0.45,key_players:["Dirk","Kidd","Terry"],style:"Dirk's iconic pull-up and Kidd defense"},
+  {name:"2005 Phoenix Suns",era:"00s",rating:65,prob:0.43,key_players:["Nash","Stoudemire","Marion"],style:"7 seconds or less revolutionizes pace"},
+  {name:"1994 New York Knicks",era:"90s",rating:63,prob:0.40,key_players:["Ewing","Starks","Oakley"],style:"physical Ewing inside + scrappy perimeter"},
+  {name:"2019 Toronto Raptors",era:"10s",rating:62,prob:0.38,key_players:["Kawhi","Lowry","Ibaka"],style:"Kawhi's peak playoff performance"},
+  {name:"2021 Milwaukee Bucks",era:"20s",rating:61,prob:0.35,key_players:["Giannis","Holiday","Middleton"],style:"Giannis rim attacks + lockdown D"},
+  {name:"2023 Denver Nuggets",era:"20s",rating:60,prob:0.33,key_players:["Jokic","Murray","Porter"],style:"Joker's playmaking unlocks everything"},
+];
+
+const SYNERGIES = [
+  {
+    id:"dynasty",
+    name:"Dynasty Bond",
+    desc:"3+ players from the same franchise",
+    bonus:15,
+    type:"offense",
+    check: (roster) => {
+      const teams = roster.map(p=>p.team);
+      return teams.some(t => teams.filter(x=>x===t).length>=3);
+    }
+  },
+  {
+    id:"era_cohesion",
+    name:"Era Cohesion",
+    desc:"3+ players from same decade",
+    bonus:10,
+    type:"teamwork",
+    check: (roster) => {
+      const decades = roster.map(p=>p.decade);
+      return decades.some(d => decades.filter(x=>x===d).length>=3);
+    }
+  },
+  {
+    id:"balanced_attack",
+    name:"Balanced Attack",
+    desc:"5 different positions (PG, SG, SF, PF, C)",
+    bonus:12,
+    type:"offense",
+    check: (roster) => {
+      const positions = new Set(roster.map(p=>p.pos));
+      return positions.size===5;
+    }
+  },
+  {
+    id:"defensive_anchor",
+    name:"Defensive Anchor",
+    desc:"2+ players averaging 2.0+ blocks",
+    bonus:10,
+    type:"defense",
+    check: (roster) => roster.filter(p=>p.blk>=2.0).length>=2
+  },
+  {
+    id:"playmaking_core",
+    name:"Playmaking Core",
+    desc:"2+ players averaging 7+ assists",
+    bonus:8,
+    type:"offense",
+    check: (roster) => roster.filter(p=>p.ast>=7.0).length>=2
+  },
+  {
+    id:"rebounding_machine",
+    name:"Rebounding Machine",
+    desc:"Combined team rebounds 50+ per game",
+    bonus:8,
+    type:"defense",
+    check: (roster) => roster.reduce((s,p)=>s+p.reb,0)>=50
+  },
+  {
+    id:"scoring_explosion",
+    name:"Scoring Explosion",
+    desc:"3+ players averaging 22+ points",
+    bonus:12,
+    type:"offense",
+    check: (roster) => roster.filter(p=>p.pts>=22).length>=3
+  },
+  {
+    id:"era_diversity",
+    name:"Time Travelers",
+    desc:"Players from 4 different decades",
+    bonus:7,
+    type:"chemistry",
+    check: (roster) => {
+      const decades = new Set(roster.map(p=>p.decade));
+      return decades.size>=4;
+    }
+  },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  roster: [],
+  season: 1,
+  teamName: 'My All-Stars',
+  seasonPool: [],        // randomized ~50% draw from PLAYERS for this season
+  currentRound: 0,
+  roundResults: [],
+  playoffTeams: [],
+  gameOver: false,
+  champion: false,
+  seasonHistory: [],
+  os: {
+    actionChosen: null,  // 'swap' | 'train' — must pick one, not both
+    swapDone: false,
+    trainDone: false,
+    dropIds: [], addIds: [],
+    trainId: null, trainRoll: null,
+  },
+  boosts: {},
+};
+
+const PLAYER_FLEX = {
+  // SG who can play SF
+  3:  ['SG','SF'],   // Jordan
+  14: ['SG','SF'],   // Kobe
+  29: ['SG','SF'],   // Drexler
+  31: ['SG','SF'],   // Kawhi
+  35: ['SG','SF'],   // Harden
+  // SF who can play PF
+  5:  ['SF','PF'],   // LeBron
+  6:  ['SF','PF'],   // Elgin Baylor
+  16: ['SF','PF'],   // Bird
+  17: ['SF','PF'],   // Durant
+  32: ['SF','PF'],   // Pippen
+  37: ['SF','PF'],   // Dirk
+  50: ['SF','SG'],   // Paul George
+  53: ['SF','PG'],   // Kawhi (already SG above — keep PF flex too)
+  70: ['SF','PF'],   // Chris Bosh
+  73: ['SF','PF'],   // Tatum
+  // PF who can play C
+  7:  ['PF','C'],    // Karl Malone
+  8:  ['PF','SF'],   // Bob Pettit
+  19: ['PF','C'],    // Giannis
+  20: ['PF','C'],    // Barkley
+  36: ['PF','C'],    // Tim Duncan
+  54: ['PF','C'],    // Anthony Davis
+  55: ['PF','SF'],   // Rodman
+  56: ['PF','C'],    // Draymond
+  // PG who can play SG
+  1:  ['PG','SF'],   // Magic (famous center start in '80 Finals, plays everywhere)
+  12: ['PG','SG'],   // Curry
+  25: ['PG','SG'],   // CP3
+  38: ['PG','SG'],   // Lillard
+  41: ['PF','PG'],   // Luka
+  // C who can play PF
+  9:  ['C','PF'],    // Kareem
+  10: ['C','PF'],    // Wilt
+  24: ['C','PF'],    // Jokic
+  40: ['C','PF'],    // Ewing
+  41: ['C','PF'],    // Robinson (was already Luka above — this is id 41 collision, skip)
+  58: ['C','PF'],    // Willis Reed
+  60: ['C','PF'],    // Pau Gasol
+  77: ['C','PF'],    // Artis Gilmore
+};
+const ROUND_NAMES = ["First Round","Conference Semifinals","Conference Finals","NBA Finals"];
+const BUDGET_MAX = 300;
+const TIER1_MAX = 1;
+const TIER2_MAX = 2;
+
+// ============================================================
+// SEASON POOL — randomized 50% of PLAYERS drawn each season
+// ============================================================
+// Groups by tier, shuffles each group, takes ~50%.
+// Always keeps currently-rostered players available so you don't
+// lose access to your own team when the pool refreshes.
+function generateSeasonPool() {
+  const tiers = [1,2,3,4,5,6];
+  const pool = [];
+  const rosterIds = new Set(state.roster.map(p=>p.id));
+
+  tiers.forEach(tier => {
+    const group = PLAYERS.filter(p => p.tier === tier);
+    // Shuffle
+    for(let i = group.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [group[i],group[j]] = [group[j],group[i]];
+    }
+    // Take ~50%, minimum 3 per tier to ensure enough choices
+    const take = Math.max(3, Math.round(group.length * 0.50));
+    const taken = group.slice(0, take);
+    // Always include any currently-rostered player from this tier
+    group.forEach(p => {
+      if(rosterIds.has(p.id) && !taken.find(x=>x.id===p.id)) taken.push(p);
+    });
+    pool.push(...taken);
+  });
+
+  state.seasonPool = pool;
+}
+
+// Pool accessor — falls back to full PLAYERS if pool is empty (first load)
+function getPool() {
+  return state.seasonPool.length > 0 ? state.seasonPool : PLAYERS;
+}
+function getBudgetUsed() { return state.roster.reduce((s,p)=>s+p.pts_val,0); }
+function getTier1Count() { return state.roster.filter(p=>p.tier===1).length; }
+function getTier2Count() { return state.roster.filter(p=>p.tier===2).length; }
+
+function canAfford(player) {
+  const newBudget = getBudgetUsed() + player.pts_val;
+  if(newBudget > BUDGET_MAX) return false;
+  if(player.tier===1 && getTier1Count()>=TIER1_MAX) return false;
+  if(player.tier===2 && getTier2Count()>=TIER2_MAX) return false;
+  return true;
+}
+
+function tierColor(tier) {
+  return ['','var(--tier1)','var(--tier2)','var(--tier3)','var(--tier4)','var(--tier5)','var(--tier6)'][tier];
+}
+function tierClass(tier) { return `t${tier}`; }
+
+// ============================================================
+// RENDER: PLAYER GRID
+// ============================================================
+function renderPlayerGrid() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const posF = document.getElementById('pos-filter').value;
+  const decF = document.getElementById('decade-filter').value;
+
+  const sortKey = document.getElementById('sort-filter').value;
+
+  const pool = getPool();
+  const poolIds = new Set(pool.map(p=>p.id));
+
+  // Show ALL players — unavailable ones get greyed + strikethrough treatment
+  const filtered = PLAYERS.filter(p => {
+    if(search && !p.name.toLowerCase().includes(search)) return false;
+    if(posF && p.pos!==posF) return false;
+    if(decF && p.decade!==decF) return false;
+    return true;
+  }).sort((a,b) => b[sortKey] - a[sortKey]);
+
+  const grid = document.getElementById('player-grid');
+  const selectedIds = new Set(state.roster.map(p=>p.id));
+
+  grid.innerHTML = filtered.map(p => {
+    const sel = selectedIds.has(p.id);
+    const inPool = poolIds.has(p.id);
+    const affordable = canAfford(p) || sel;
+    // Unavailable = not in pool this season (and not already selected)
+    const unavailable = !inPool && !sel;
+    const disabled = unavailable || (!sel && (state.roster.length>=5 || !affordable));
+    const flexPos = PLAYER_FLEX[p.id];
+    const posDisplay = flexPos ? flexPos.join('/') : p.pos;
+
+    // Show top stat adjustments if selected
+    let adjNote = '';
+    if(sel && state.roster.length >= 2) {
+      const td = getTeamStats(state.roster).playerDiminish.find(d=>d.id===p.id);
+      if(td) {
+        const impacts = [
+          {label:'pts', diff:td.ptsDiff, raw:p.pts, adj:td.adjPts},
+          {label:'reb', diff:td.rebDiff, raw:p.reb, adj:td.adjReb},
+          {label:'ast', diff:td.astDiff, raw:p.ast, adj:td.adjAst},
+        ].filter(x => Math.abs(x.diff) > 0.5)
+         .sort((a,b) => a.diff - b.diff)
+         .slice(0,3);
+        if(impacts.length) {
+          adjNote = impacts.map(x => {
+            const col = x.diff < 0 ? 'var(--red)' : 'var(--green)';
+            const sign = x.diff > 0 ? '+' : '';
+            return `<span style="color:${col};font-size:11px">${x.adj}${x.label} (${sign}${x.diff})</span>`;
+          }).join(' ');
+        }
+      }
+    }
+
+    const unavailableOverlay = unavailable ? `
+      <div style="position:absolute;inset:0;border-radius:8px;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:80%;height:2px;background:rgba(255,80,80,0.7);transform:rotate(-12deg);border-radius:2px;"></div>
+      </div>
+      <div style="position:absolute;top:5px;right:5px;font-size:10px;color:rgba(255,100,100,0.9);font-weight:600;background:rgba(0,0,0,0.5);padding:1px 5px;border-radius:3px;">N/A</div>` : '';
+
+    return `<div class="player-card ${sel?'selected':''} ${disabled?'disabled':''} ${unavailable?'unavailable':''}"
+      onclick="${unavailable ? '' : `togglePlayer(${p.id})`}"
+      title="${unavailable ? 'Not available this season' : p.note}"
+      style="position:relative;${unavailable?'opacity:0.45;':''}">
+      ${unavailableOverlay}
+      <div class="player-tier">
+        <span class="tier-badge ${tierClass(p.tier)}" style="font-size:10px;padding:2px 6px">T${p.tier}</span>
+      </div>
+      <div class="player-name" style="${unavailable?'text-decoration:line-through;color:var(--text-muted);':''}">${p.name}</div>
+      <div class="player-meta">${posDisplay} · ${p.decade} · ${p.team.split('/')[0]}</div>
+      <div class="player-pts" style="color:${tierColor(p.tier)}">${p.pts_val} pts</div>
+      <div class="player-stats">
+        ${p.pts}ppg · ${p.reb}rpg · ${p.ast}apg<br>
+        ${p.stl}stl · ${p.blk}blk
+      </div>
+      ${adjNote ? `<div style="margin-top:5px;line-height:1.6">${adjNote}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function filterPlayers() { renderPlayerGrid(); }
+
+function togglePlayer(id) {
+  const p = PLAYERS.find(x=>x.id===id);
+  const idx = state.roster.findIndex(x=>x.id===id);
+  if(idx>=0) {
+    state.roster.splice(idx,1);
+  } else {
+    if(state.roster.length>=5) return;
+    if(!canAfford(p)) return;
+    state.roster.push(p);
+  }
+  updateDraftUI();
+}
+
+// ============================================================
+// RENDER: ROSTER + BUDGET
+// ============================================================
+function updateDraftUI() {
+  // Generate pool if not yet done (first load)
+  if(state.seasonPool.length === 0) generateSeasonPool();
+  renderPlayerGrid();
+  renderRoster();
+  renderSynergies();
+  renderDraftPenalties();
+  updateBudget();
+  document.getElementById('start-playoffs-btn').disabled = state.roster.length!==5;
+}
+
+function renderDraftPenalties() {
+  const panel = document.getElementById('draft-penalties');
+  const rows  = document.getElementById('draft-penalty-rows');
+  if(!panel || !rows) return;
+
+  if(state.roster.length < 2) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  const stats = getTeamStats(state.roster);
+
+  // Collect all impacts across all players
+  const allImpacts = [];
+  stats.playerDiminish.forEach(d => {
+    if(Math.abs(d.ptsDiff) > 0.5) allImpacts.push({
+      diff: d.ptsDiff,
+      text: d.ptsDiff < 0
+        ? `<span style="font-weight:600">${d.name}</span> drops to <span style="color:var(--red);font-weight:600">${d.adjPts} ppg</span> (${d.ptsDiff} from competing scorers)`
+        : `<span style="font-weight:600">${d.name}</span> rises to <span style="color:var(--green);font-weight:600">${d.adjPts} ppg</span> (transition bonus)`
+    });
+    if(Math.abs(d.rebDiff) > 0.8) allImpacts.push({
+      diff: d.rebDiff,
+      text: `<span style="font-weight:600">${d.name}</span> drops to <span style="color:var(--amber);font-weight:600">${d.adjReb} rpg</span> (${d.rebDiff} sharing boards)`
+    });
+    if(Math.abs(d.astDiff) > 0.8) allImpacts.push({
+      diff: d.astDiff,
+      text: `<span style="font-weight:600">${d.name}</span> adjusted to <span style="color:var(--amber);font-weight:600">${d.adjAst} apg</span> (${d.astDiff} crowded backcourt)`
+    });
+  });
+
+  // Add transition bonus note if active
+  if(stats.topScorerBonus > 0) {
+    allImpacts.push({
+      diff: stats.topScorerBonus,
+      text: `⚡ <span style="font-weight:600">${stats.topScorerName}</span> gets <span style="color:var(--green);font-weight:600">+${stats.topScorerBonus.toFixed(1)} ppg</span> from elite ${stats.topScorerBonus>=2?'rebounding + steals':stats.topScorerBonus>=1.5?'rebounding':'steals'}`
+    });
+  }
+
+  allImpacts.sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff));
+  const top3 = allImpacts.slice(0,3);
+
+  if(top3.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+  rows.innerHTML = top3.map(x =>
+    `<div style="font-size:13px;color:var(--text-muted);padding:3px 0;line-height:1.5">${x.text}</div>`
+  ).join('');
+}
+
+function renderRoster() {
+  const el = document.getElementById('roster-display');
+  const slots = assignPositions(state.roster);
+
+  el.innerHTML = slots.map((entry) => {
+    if(!entry) return `<div class="roster-slot"><span class="empty-label">Empty</span></div>`;
+    const {p, assignedPos} = entry;
+    const isFlex = assignedPos !== p.pos;
+    return `<div class="roster-slot filled">
+      <div class="slot-pos">${assignedPos}${isFlex?`<span style="font-size:10px;color:var(--amber);margin-left:3px">flex</span>`:''}
+      </div>
+      <div class="slot-name">${p.name}</div>
+      <div class="slot-pts" style="color:${tierColor(p.tier)}">${p.pts_val} pts</div>
+      <div class="slot-remove" onclick="togglePlayer(${p.id})">Remove</div>
+    </div>`;
+  }).join('');
+}
+
+// Optimal position assignment — tries to fill PG/SG/SF/PF/C slots
+// using each player's flex positions. Greedy: assign least-flexible first.
+function assignPositions(roster) {
+  const positions = ['PG','SG','SF','PF','C'];
+  const slots = {}; // pos -> {p, assignedPos}
+  const used = new Set();
+
+  // Build each player's available positions (native + flex)
+  const playerOptions = roster.map(p => ({
+    p,
+    opts: PLAYER_FLEX[p.id] || [p.pos],
+  }));
+
+  // Sort by fewest options first (assign most constrained players first)
+  playerOptions.sort((a,b) => a.opts.length - b.opts.length);
+
+  for(const {p, opts} of playerOptions) {
+    // Try preferred pos first, then flex
+    let assigned = null;
+    for(const pos of opts) {
+      if(!slots[pos]) { slots[pos] = {p, assignedPos: pos}; assigned = pos; break; }
+    }
+    if(!assigned) {
+      // No standard slot — put in first empty position slot
+      const fallback = positions.find(pos => !slots[pos]);
+      if(fallback) slots[fallback] = {p, assignedPos: p.pos};
+    }
+    used.add(p.id);
+  }
+
+  return positions.map(pos => slots[pos] || null);
+}
+
+function renderSynergies() {
+  const el = document.getElementById('synergy-list');
+  if(state.roster.length===0){ el.innerHTML='<div style="font-size:12px;color:var(--text-dim)">Select players to see synergies</div>'; return; }
+  el.innerHTML = SYNERGIES.map(syn => {
+    const active = state.roster.length>=2 && syn.check(state.roster);
+    return `<div class="synergy-item ${active?'active':''}">
+      <div class="synergy-dot"></div>
+      <div>
+        <div class="synergy-name">${syn.name}</div>
+        <div style="font-size:11px;color:var(--text-dim)">${syn.desc}</div>
+      </div>
+      <div class="synergy-bonus">${active?'+'+syn.bonus+'%':'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateBudget() {
+  const used = getBudgetUsed();
+  const remaining = BUDGET_MAX - used;
+  const pct = Math.min(100, (used/BUDGET_MAX)*100);
+  document.getElementById('budget-display').textContent = `${used} / ${BUDGET_MAX} pts`;
+  document.getElementById('budget-slots').textContent = `${state.roster.length} / 5 selected`;
+  const remEl = document.getElementById('budget-remaining');
+  if(remEl) {
+    remEl.textContent = `${remaining} pts`;
+    remEl.style.color = remaining < 50 ? 'var(--red)' : remaining < 100 ? 'var(--amber)' : 'var(--accent)';
+  }
+  const fill = document.getElementById('budget-fill');
+  fill.style.width = pct+'%';
+  fill.className = 'budget-fill' + (pct>90?' over':pct>70?' warn':'');
+}
+
+// ============================================================
+// SYNERGY BONUS CALCULATOR  (user only — opponents get no bonus)
+// ============================================================
+function calcSynergyBonus(roster) {
+  let offBonus = 0, defBonus = 0, chemBonus = 0;
+  SYNERGIES.forEach(syn => {
+    if(syn.check(roster)) {
+      if(syn.type==='offense') offBonus += syn.bonus;
+      else if(syn.type==='defense') defBonus += syn.bonus;
+      else chemBonus += syn.bonus;
+    }
+  });
+  return {offBonus, defBonus, chemBonus, total: offBonus+defBonus+chemBonus};
+}
+
+// ============================================================
+// TEAM RATING — diminishing returns on overlapping stats
+// ============================================================
+// Core idea: stats don't add linearly when players compete for
+// the same resources (shots, boards, ball). The model applies
+// position-ranked coefficients to each stat category, then
+// feeds adjusted totals into the efficiency formula.
+//
+// Scoring (shots are finite):
+//   Rank 1: 100%  Rank 2: 92%  Rank 3: 85%  Rank 4: 80%  Rank 5: 76%
+//   Stacking Jordan+Iverson+Curry means all three score less.
+//
+// Rebounds (boards are finite):
+//   Rank 1: 100%  Rank 2: 88%  Rank 3: 78%  Rank 4: 72%  Rank 5: 68%
+//   Russell+Shaq split boards; both get less than their career avg.
+//
+// Assists (ball movement compounds — slight positive):
+//   Rank 1: 100%  Rank 2: 90%  Rank 3: 82%  Rank 4: 76%  Rank 5: 72%
+//   Two great passers still enable each other, just not fully.
+//
+// Steals + Blocks add linearly — defensive plays are independent events.
+
+const SCORING_COEFFS = [1.00, 0.92, 0.85, 0.80, 0.76];
+const REB_COEFFS     = [1.00, 0.88, 0.78, 0.72, 0.68];
+const AST_COEFFS     = [1.00, 0.90, 0.82, 0.76, 0.72];
+
+function adjustedTeamStats(roster) {
+  const byPts = [...roster].sort((a,b) => b.pts - a.pts);
+  const byReb = [...roster].sort((a,b) => b.reb - a.reb);
+  const byAst = [...roster].sort((a,b) => b.ast - a.ast);
+
+  const totStl = roster.reduce((s,p) => s + p.stl, 0);
+  const totReb = roster.reduce((s,p) => s + p.reb, 0);
+
+  // Transition/fast-break bonus for top scorer:
+  // Elite rebounding (totReb >= 55) or elite steals (totStl >= 9)
+  // generates extra transition opportunities → top scorer gets more easy looks.
+  // Bonus: up to +2.5 pts for the #1 scorer (stacks from both sources).
+  let topScorerBonus = 0;
+  if(totReb >= 55) topScorerBonus += 1.5;   // dominant rebounding → fast breaks
+  if(totStl >= 9)  topScorerBonus += 1.0;   // high steals → transition buckets
+
+  const adjPts = byPts.map((p,i) => {
+    const base = p.pts * SCORING_COEFFS[i];
+    return i === 0 ? base + topScorerBonus : base;
+  });
+
+  return {
+    totPts: adjPts.reduce((a,b) => a+b, 0),
+    totReb: byReb.reduce((s,p,i) => s + p.reb * REB_COEFFS[i], 0),
+    totAst: byAst.reduce((s,p,i) => s + p.ast * AST_COEFFS[i], 0),
+    totStl,
+    totBlk: roster.reduce((s,p) => s + p.blk, 0),
+    topScorerBonus,              // expose for display
+    topScorerName: byPts[0].name,
+  };
+}
+
+function calcTeamRating(roster, bonuses) {
+  const s = adjustedTeamStats(roster);
+
+  // Assist efficiency — softer benchmark (20/g neutral, was 25)
+  // Rewards good passing but doesn't crater typical builds
+  const astEff = Math.max(0.80, Math.min(1.15, s.totAst / 20));
+  // Rebounding efficiency — softer benchmark (38/g neutral, was 45)
+  const rebEff = Math.max(0.85, Math.min(1.10, s.totReb / 38));
+  const offScore = s.totPts * astEff * rebEff;
+
+  // Defense: steals create transition, blocks deter paint shots
+  const defScore = (s.totStl * 1.0 + s.totBlk * 0.7) * 2.5;
+
+  // 55% offense, 45% defense
+  const rawCombined = offScore * 0.55 + defScore * 0.45;
+
+  // Normalize: empirical range ~17 (budget/weak) to ~100 (elite all-around)
+  // Maps to 35–90 so a solid 300pt build rates ~60, elite builds rate ~85+
+  const normalized = 35 + ((rawCombined - 17) / 83) * 55;
+  const clamped = Math.max(30, Math.min(95, normalized));
+
+  // Synergy multiplier — user only, opponents have none
+  return clamped * (1 + bonuses.total / 100);
+}
+
+// Returns adjusted stats + per-player diminishment data for display
+function getTeamStats(roster) {
+  const adj = adjustedTeamStats(roster);
+
+  // Per-player diminishment: show raw vs adjusted for each player
+  const byPts = [...roster].sort((a,b) => b.pts - a.pts);
+  const byReb = [...roster].sort((a,b) => b.reb - a.reb);
+  const byAst = [...roster].sort((a,b) => b.ast - a.ast);
+
+  const playerDiminish = roster.map(p => {
+    const ptRank = byPts.findIndex(x=>x.id===p.id);
+    const rebRank = byReb.findIndex(x=>x.id===p.id);
+    const astRank = byAst.findIndex(x=>x.id===p.id);
+    const adjPts = parseFloat((p.pts * SCORING_COEFFS[ptRank] + (ptRank===0?adj.topScorerBonus:0)).toFixed(1));
+    const adjReb = parseFloat((p.reb * REB_COEFFS[rebRank]).toFixed(1));
+    const adjAst = parseFloat((p.ast * AST_COEFFS[astRank]).toFixed(1));
+    const ptsDiff = parseFloat((adjPts - p.pts).toFixed(1));
+    const rebDiff = parseFloat((adjReb - p.reb).toFixed(1));
+    const astDiff = parseFloat((adjAst - p.ast).toFixed(1));
+    return {id:p.id, name:p.name, ptsDiff, rebDiff, astDiff, adjPts, adjReb, adjAst};
+  });
+
+  return {
+    pts:  adj.totPts.toFixed(1),
+    reb:  adj.totReb.toFixed(1),
+    ast:  adj.totAst.toFixed(1),
+    stl:  adj.totStl.toFixed(1),
+    blk:  adj.totBlk.toFixed(1),
+    topScorerBonus: adj.topScorerBonus,
+    topScorerName:  adj.topScorerName,
+    playerDiminish,
+  };
+}
+
+// ============================================================
+// PLAYOFF SETUP
+// ============================================================
+function drawPlayoffTeams() {
+  // Weighted random draw of 7 opponents
+  const pool = [...HISTORIC_TEAMS];
+  const chosen = [];
+  const weights = pool.map(t=>t.prob);
+  
+  for(let i=0;i<7;i++) {
+    const totalW = weights.reduce((a,b)=>a+b,0);
+    let r = Math.random()*totalW;
+    let idx = 0;
+    while(r > weights[idx] && idx<weights.length-1) { r-=weights[idx]; idx++; }
+    chosen.push(pool[idx]);
+    pool.splice(idx,1);
+    weights.splice(idx,1);
+  }
+  return chosen;
+}
+
+function startPlayoffs() {
+  if(state.roster.length!==5) return;
+  // Sync team name from input
+  const nameEl = document.getElementById('team-name-input');
+  if(nameEl) state.teamName = nameEl.value || 'My All-Stars';
+
+  state.playoffTeams = drawPlayoffTeams();
+  state.currentRound = 0;
+  state.roundResults = [];
+  state.gameOver = false;
+  state.champion = false;
+
+  const el = document.getElementById('season-num');
+  if(el) el.textContent = state.season;
+
+  showScreen('screen-playoffs');
+  renderBracket();
+  renderCurrentMatchup();
+}
+
+// ============================================================
+// BRACKET RENDER — proper visual bracket with connector lines
+// ============================================================
+function renderBracket() {
+  const container = document.getElementById('bracket-container');
+  const teams = state.playoffTeams;
+
+  // Bracket layout:
+  // Left side (user's path): R1 top, R2, CF, Finals
+  // Right side (other half): R1 bottom, R2 bottom feeds into Finals
+  // playoffTeams[0..3] = user's 4 opponents
+  // playoffTeams[4,5,6] = other half flavor teams
+
+  const shortName = t => t.name.replace(/^\d{4}\s/,'').replace('Golden State','GS').replace('Los Angeles','LA').replace('Philadelphia','Philly');
+
+  // Build matchup data for each round of user's path
+  const userPath = [0,1,2,3].map(ri => {
+    const opp = teams[ri];
+    const result = state.roundResults[ri];
+    const future = ri > state.currentRound && !state.roundResults[ri-1]?.win;
+    return { opp, result, ri };
+  });
+
+  // Other half: R1 has teams[4] vs teams[5], winner faces teams[6] in R2
+  const otherR1 = { t1: teams[4], t2: teams[5] };
+  const otherR2 = { t1: teams[6], t2: {name:'Winner Other R1'} };
+
+  // Helper: render one matchup card HTML
+  function matchupCard(topLabel, topScore, topWin, botLabel, botScore, botWin, dimmed, isUser) {
+    const topCls = topWin===true ? 'bk-winner' : topWin===false ? 'bk-loser' : (isUser ? 'bk-user' : '');
+    const botCls = botWin===true ? 'bk-winner' : botWin===false ? 'bk-loser' : '';
+    return `<div class="bk-matchup${dimmed?' bk-dim':''}">
+      <div class="bk-team ${topCls}">
+        <span class="bk-tname">${topLabel}</span>
+        <span class="bk-score">${topScore!==undefined?topScore:''}</span>
+      </div>
+      <div class="bk-team ${botCls}">
+        <span class="bk-tname">${botLabel}</span>
+        <span class="bk-score">${botScore!==undefined?botScore:''}</span>
+      </div>
+    </div>`;
+  }
+
+  // For each of user's rounds
+  function userCard(ri) {
+    const { opp, result } = userPath[ri];
+    const eliminated = state.roundResults.some((r,i) => i < ri && !r.win);
+    const upcoming = ri > state.currentRound;
+    const dimmed = eliminated && upcoming;
+    const topWin = result ? result.win : null;
+    const botWin = result ? !result.win : null;
+
+    // Only show win% for the CURRENT active round — future rounds keep their opponent hidden odds-wise
+    const isCurrent = ri === state.currentRound && !result;
+    let winPctStr = '';
+    if(isCurrent) {
+      const bonuses = calcSynergyBonus(state.roster);
+      const myRating = calcTeamRating(state.roster, bonuses);
+      const spread = myRating - opp.rating;
+      const winPct = Math.round(Math.max(25, Math.min(80, 50 + spread * 1.2)));
+      winPctStr = `<span style="font-size:10px;color:${winPct>=50?'var(--green)':'var(--red)'};margin-left:4px">${winPct}%</span>`;
+    }
+
+    // Future unplayed rounds: show opponent name but dim the card
+    // Already-eliminated path: dim it fully
+    return matchupCard(
+      getTeamLabel() + winPctStr,
+      result ? result.userScore : undefined, topWin,
+      upcoming && !eliminated ? `? — ${ROUND_NAMES[ri]}` : shortName(opp),
+      result ? result.oppScore : undefined, botWin,
+      dimmed, true
+    );
+  }
+
+  // The bracket is rendered as an SVG-adjacent HTML layout with CSS connectors
+  // Structure: 4 columns (R1, QF, SF, Finals) with vertical centering
+  // Left column has 2 matchups (user top, other bottom)
+  // Each subsequent column has fewer, vertically centered to align with merge
+
+  const html = `
+  <div class="bk-wrap">
+    <!-- Round labels -->
+    <div class="bk-labels">
+      <div class="bk-label">First Round</div>
+      <div class="bk-label">Conf. Semis</div>
+      <div class="bk-label">Conf. Finals</div>
+      <div class="bk-label">NBA Finals</div>
+    </div>
+
+    <div class="bk-body">
+      <!-- Column 1: First Round -->
+      <div class="bk-col bk-col-r1">
+        <div class="bk-slot bk-slot-top">
+          ${userCard(0)}
+        </div>
+        <div class="bk-slot bk-slot-bot">
+          ${matchupCard(shortName(otherR1.t1),'',null,shortName(otherR1.t2),'',null,true,false)}
+        </div>
+      </div>
+
+      <!-- Connector 1→2 -->
+      <div class="bk-conn">
+        <div class="bk-conn-top"></div>
+        <div class="bk-conn-mid"></div>
+        <div class="bk-conn-bot"></div>
+      </div>
+
+      <!-- Column 2: Conf. Semis -->
+      <div class="bk-col bk-col-r2">
+        <div class="bk-slot bk-slot-top">
+          ${userCard(1)}
+        </div>
+        <div class="bk-slot bk-slot-bot">
+          ${matchupCard(shortName(otherR2.t1),'',null,'Winner Other R1','',null,true,false)}
+        </div>
+      </div>
+
+      <!-- Connector 2→3 -->
+      <div class="bk-conn">
+        <div class="bk-conn-top"></div>
+        <div class="bk-conn-mid"></div>
+        <div class="bk-conn-bot"></div>
+      </div>
+
+      <!-- Column 3: Conf. Finals -->
+      <div class="bk-col bk-col-cf">
+        <div class="bk-slot bk-slot-only">
+          ${userCard(2)}
+        </div>
+      </div>
+
+      <!-- Connector 3→4 -->
+      <div class="bk-conn bk-conn-single">
+        <div class="bk-conn-straight"></div>
+      </div>
+
+      <!-- Column 4: Finals -->
+      <div class="bk-col bk-col-finals">
+        <div class="bk-slot bk-slot-only">
+          ${userCard(3)}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+// ============================================================
+// CURRENT MATCHUP PANEL
+// ============================================================
+function renderCurrentMatchup() {
+  const card = document.getElementById('current-matchup-card');
+
+  if(state.gameOver) { card.style.display='none'; return; }
+
+  const ri = state.currentRound;
+  if(ri>=4) { card.style.display='none'; return; }
+
+  card.style.display='block';
+  const opp = state.playoffTeams[ri];
+  const roundDone = state.roundResults[ri];
+
+  document.getElementById('matchup-title').textContent = ROUND_NAMES[ri];
+  document.getElementById('simulate-btn').style.display = roundDone?'none':'';
+
+  const bonuses = calcSynergyBonus(state.roster);
+  const myRating = calcTeamRating(state.roster, bonuses);
+  const stats = getTeamStats(state.roster);
+  const oppRating = opp.rating;
+  const spread = myRating - oppRating;
+  const rawProb = 0.50 + (spread * 0.012);
+  const winPct = Math.round(Math.max(0.25, Math.min(0.80, rawProb)) * 100);
+
+  // Diminishing-returns warnings
+  const warns = [];
+  const rawStats = {
+    pts: state.roster.reduce((s,p)=>s+p.pts,0),
+    reb: state.roster.reduce((s,p)=>s+p.reb,0),
+    ast: state.roster.reduce((s,p)=>s+p.ast,0),
+  };
+  const adjRebLoss = rawStats.reb - parseFloat(stats.reb);
+  const adjPtsLoss = rawStats.pts - parseFloat(stats.pts);
+  if(adjPtsLoss > 15) warns.push(`Scoring overlap costs ~${adjPtsLoss.toFixed(0)} pts/g (${state.roster.filter(p=>p.pts>=22).length} players 22+ ppg)`);
+  if(adjRebLoss > 8) warns.push(`Rebounding overlap costs ~${adjRebLoss.toFixed(0)} reb/g`);
+  if(parseFloat(stats.ast) < 15) warns.push(`Low assists (${stats.ast}/g) — isolation penalty active`);
+  if((parseFloat(stats.stl)+parseFloat(stats.blk)) < 4) warns.push(`Weak defense (${stats.stl} stl + ${stats.blk} blk/g)`);
+
+  // Per-player: collect all adjustments, sort by absolute impact, show top 3 overall
+  const allImpacts = [];
+  stats.playerDiminish.forEach(d => {
+    if(Math.abs(d.ptsDiff) > 0.5) allImpacts.push({
+      name:d.name, stat:'ppg', raw:d.adjPts + (-d.ptsDiff), adj:d.adjPts, diff:d.ptsDiff,
+      text: d.ptsDiff < 0
+        ? `${d.name} drops to <span style="color:var(--red);font-weight:600">${d.adjPts} ppg</span> due to competing scorers`
+        : `${d.name} rises to <span style="color:var(--green);font-weight:600">${d.adjPts} ppg</span> from transition plays`
+    });
+    if(Math.abs(d.rebDiff) > 0.8) allImpacts.push({
+      name:d.name, stat:'rpg', raw:d.adjReb + (-d.rebDiff), adj:d.adjReb, diff:d.rebDiff,
+      text: `${d.name} drops to <span style="color:var(--amber);font-weight:600">${d.adjReb} rpg</span> sharing boards`
+    });
+    if(Math.abs(d.astDiff) > 0.8) allImpacts.push({
+      name:d.name, stat:'apg', raw:d.adjAst + (-d.astDiff), adj:d.adjAst, diff:d.astDiff,
+      text: `${d.name} adjusted to <span style="color:var(--amber);font-weight:600">${d.adjAst} apg</span> in crowded backcourt`
+    });
+  });
+  allImpacts.sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff));
+  const topImpacts = allImpacts.slice(0,3);
+
+  const diminishRows = topImpacts.length
+    ? topImpacts.map(x=>`<div style="padding:4px 0;font-size:13px;color:var(--text-muted);line-height:1.5">${x.text}</div>`).join('')
+    : `<div style="font-size:13px;color:var(--text-dim)">No significant overlap — stats are near full value</div>`;
+
+  const transitionNote = stats.topScorerBonus > 0
+    ? `<div style="margin-top:4px;font-size:13px;color:var(--green)">⚡ ${stats.topScorerName} gets +${stats.topScorerBonus.toFixed(1)} ppg from elite ${stats.topScorerBonus>=2?'rebounding + steals':stats.topScorerBonus>=1.5?'rebounding':'steals'}</div>`
+    : '';
+
+  // Opponent stat estimates (approximate per-player averages for each historic team)
+  const oppStats = {pts: opp.rating*0.9, reb: opp.rating*0.5, ast: opp.rating*0.25, stl: opp.rating*0.06, blk: opp.rating*0.04};
+  function statDiff(userVal, oppVal) {
+    const d = parseFloat(userVal) - oppVal;
+    const col = d >= 0 ? 'var(--green)' : 'var(--red)';
+    const sign = d >= 0 ? '+' : '';
+    return `<span style="color:${col};font-size:12px;font-weight:500">${sign}${d.toFixed(1)}</span>`;
+  }
+
+  document.getElementById('matchup-content').innerHTML = `
+    <div class="opp-card">
+      <div>
+        <div class="opp-name">${opp.name}</div>
+        <div class="opp-era">Era: ${opp.era} · Style: ${opp.style}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Key players: ${opp.key_players.join(', ')}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">Their rating</div>
+        <div class="opp-rating">${oppRating}</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;">
+      <thead>
+        <tr style="color:var(--text-dim);font-size:11px;text-transform:uppercase;letter-spacing:0.8px;">
+          <th style="text-align:left;padding:4px 6px;font-weight:500">Stat</th>
+          <th style="text-align:center;padding:4px 6px;font-weight:500">Your Team</th>
+          <th style="text-align:center;padding:4px 6px;font-weight:500">Opponent</th>
+          <th style="text-align:center;padding:4px 6px;font-weight:500">+/–</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${[
+          {label:'Points', k:'pts', uv:stats.pts, ov:oppStats.pts.toFixed(1)},
+          {label:'Rebounds', k:'reb', uv:stats.reb, ov:oppStats.reb.toFixed(1)},
+          {label:'Assists', k:'ast', uv:stats.ast, ov:oppStats.ast.toFixed(1)},
+          {label:'Steals', k:'stl', uv:stats.stl, ov:oppStats.stl.toFixed(1)},
+          {label:'Blocks', k:'blk', uv:stats.blk, ov:oppStats.blk.toFixed(1)},
+        ].map(s=>`<tr style="border-top:1px solid var(--border);">
+          <td style="padding:6px;color:var(--text-muted)">${s.label}</td>
+          <td style="text-align:center;padding:6px;font-weight:500">${s.uv}</td>
+          <td style="text-align:center;padding:6px;color:var(--text-muted)">~${s.ov}</td>
+          <td style="text-align:center;padding:6px">${statDiff(s.uv, parseFloat(s.ov))}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+      <div class="stat-box"><div class="sval">${myRating.toFixed(1)}</div><div class="slbl">Your rating</div></div>
+      <div class="stat-box"><div class="sval" style="color:${bonuses.total>0?'var(--green)':'var(--text-muted)'}">${bonuses.total>0?'+'+bonuses.total+'%':'0%'}<span style="font-size:11px;color:var(--text-dim);margin-left:3px">syn</span></div><div class="slbl">Synergy (×rating)</div></div>
+      <div class="stat-box"><div class="sval" style="color:${winPct>=50?'var(--green)':'var(--red)'}">${winPct}%</div><div class="slbl">Win% / game</div></div>
+    </div>
+    ${warns.length ? `<div style="margin-top:8px;padding:8px 10px;background:var(--amber-bg);border:1px solid rgba(217,119,6,0.3);border-radius:6px;font-size:12px;color:var(--amber)">⚠ ${warns.join(' · ')}</div>` : ''}
+    <div style="margin-top:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="padding:6px 10px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);">Stat adjustments per player</div>
+      <div style="padding:8px 10px;">
+        ${diminishRows}
+        ${transitionNote}
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;line-height:1.6;">
+      Synergy adds ${bonuses.total}% to your rating (${(myRating/(1+bonuses.total/100)).toFixed(1)} base → ${myRating.toFixed(1)} final). Opponent stats are estimated; no synergy applied.
+    </div>
+    ${roundDone ? `<div style="margin-top:12px;padding:10px;border-radius:6px;background:${roundDone.win?'var(--green-bg)':'var(--red-bg)'};border:1px solid ${roundDone.win?'var(--green)':'var(--red)'}">
+      <span style="color:${roundDone.win?'var(--green)':'var(--red)'}; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700;">
+        ${roundDone.win?'Victory — '+roundDone.userScore+'–'+roundDone.oppScore:'Eliminated — '+roundDone.userScore+'–'+roundDone.oppScore}
+      </span>
+      ${!roundDone.win ? '<div style="font-size:13px;color:var(--text-muted);margin-top:4px">Head to the offseason to retool.</div>' : ''}
+    </div>` : ''}
+  `;
+}
+
+// (moves pips removed — moves now happen in the offseason wizard)
+
+// ============================================================
+// SIMULATION
+// ============================================================
+// HOW IT WORKS (shown in matchup panel):
+// Your team rating  = average pts_val of your 5 players (0–100 scale)
+//                     × synergy multiplier (your bonuses only)
+// Opponent rating   = their historical .rating (same 0–100 scale, no synergy)
+// Per-game win prob = 50% base + 1.2% per point of advantage, clamped 25%–80%
+// Example: your rating 72 vs opp 85 → spread -13 → 50 + (−13×1.2) = 34% per game
+// Example: your rating 90 vs opp 75 → spread +15 → 50 + (15×1.2)  = 68% per game
+// Best-of-7: first to 4 wins
+
+function simulateCurrentRound() {
+  const ri = state.currentRound;
+  const opp = state.playoffTeams[ri];
+  const bonuses = calcSynergyBonus(state.roster);
+  const myRating = calcTeamRating(state.roster, bonuses);
+  const oppEffective = opp.rating * (0.96 + Math.random() * 0.08);
+
+  document.getElementById('sim-log-card').style.display = 'block';
+  const log = document.getElementById('sim-log');
+  log.innerHTML = '';
+
+  const series = simulateSeries(myRating, oppEffective, opp, ri);
+
+  state.roundResults[ri] = {
+    opponent: opp.name,
+    userScore: series.userWins,
+    oppScore: series.oppWins,
+    win: series.userWins > series.oppWins,
+    myRating: myRating.toFixed(1),
+    oppRating: oppEffective.toFixed(1),
+    winPct: series.winPct,
+    log: series.log,
+  };
+
+  log.innerHTML = series.log.map(entry => `<div class="log-entry ${entry.cls}">${entry.text}</div>`).join('');
+  log.scrollTop = log.scrollHeight;
+
+  if(!series.win) {
+    state.gameOver = true;
+    setTimeout(()=>showResults(), 2000);
+  } else if(ri===3) {
+    state.champion = true;
+    state.gameOver = true;
+    setTimeout(()=>showResults(), 2000);
+  } else {
+    state.currentRound++;
+  }
+
+  renderBracket();
+  renderCurrentMatchup();
+}
+
+function simulateSeries(myRating, oppRating, opp, roundIdx) {
+  const log = [];
+  const gamesNeeded = 4;
+  let userW=0, oppW=0;
+  const gameNames = ['Game 1','Game 2','Game 3','Game 4','Game 5','Game 6','Game 7'];
+  const oppShort = opp.name.split(' ').slice(-1)[0];
+
+  const spread = myRating - oppRating;
+  const rawProb = 0.50 + (spread * 0.012);
+  const winProb = Math.max(0.25, Math.min(0.80, rawProb));
+  const winPct = Math.round(winProb * 100);
+
+  // Stat-aware flavor
+  const stats = getTeamStats(state.roster);
+  const lowReb = parseFloat(stats.reb) < 38;
+  const lowAst = parseFloat(stats.ast) < 18;
+  const lowDef = (parseFloat(stats.stl)+parseFloat(stats.blk)) < 4;
+
+  const winFlavors = [
+    `${oppShort}'s defense has no answer for your lineup`,
+    lowAst ? `Individual brilliance overcomes limited ball movement` : `Crisp ball movement leads to easy buckets`,
+    `Your squad imposing their will on both ends`,
+    `Timely shooting and disciplined defense seal it`,
+    lowReb ? `Outscored them despite the rebounding gap` : `Second-chance points prove the difference`,
+  ];
+  const lossFlavors = [
+    lowReb ? `${oppShort} owns the glass — too many second chances` : `${oppShort}'s experience tips the balance late`,
+    lowAst ? `Isolation offense stalls — ${oppShort} locks up the stars` : `${oppShort} forces turnovers off the dribble`,
+    lowDef ? `Open looks all night for ${oppShort} — can't slow them down` : `${oppShort}'s legend status shows in crunch time`,
+    `Late-game adjustments by ${oppShort} — hard to counter`,
+    `Turnovers in transition cost you`,
+  ];
+
+  log.push({text:`— ${ROUND_NAMES[roundIdx]}: Your Team vs. ${opp.name} —`, cls:'log-round'});
+  log.push({text:`Your rating: ${myRating.toFixed(1)}  ·  Their rating: ${oppRating.toFixed(1)}  ·  Win% per game: ${winPct}%`, cls:'log-game'});
+  log.push({text:`Team stats: ${stats.pts}pts / ${stats.reb}reb / ${stats.ast}ast / ${stats.stl}stl / ${stats.blk}blk`, cls:'log-game'});
+
+  for(let g=0; g<7; g++){
+    if(userW===gamesNeeded || oppW===gamesNeeded) break;
+    const userWinsGame = Math.random() < winProb;
+    const margin = Math.round(2 + Math.random() * 14);
+    const baseScore = 98 + Math.round(Math.random() * 18);
+    const userScore = userWinsGame ? baseScore + margin : baseScore;
+    const oppScore  = userWinsGame ? baseScore : baseScore + margin;
+    if(userWinsGame) userW++; else oppW++;
+
+    const cls = userWinsGame ? 'log-win' : 'log-loss';
+    const seriesStr = userW > oppW ? `Your team leads ${userW}-${oppW}`
+                    : userW < oppW ? `${oppShort} leads ${oppW}-${userW}`
+                    : `Series tied ${userW}-${oppW}`;
+    log.push({text:`${gameNames[g]}: ${userWinsGame?'Win':'Loss'} ${userScore}–${oppScore}  (${seriesStr})`, cls});
+    const flavors = userWinsGame ? winFlavors : lossFlavors;
+    log.push({text:`  ↳ ${flavors[Math.floor(Math.random()*flavors.length)]}`, cls:'log-game'});
+  }
+
+  const win = userW === gamesNeeded;
+  log.push({text: win
+    ? `Series result: Your team wins ${userW}–${oppW} ✓`
+    : `Series result: Eliminated ${userW}–${oppW}`,
+    cls: win ? 'log-win' : 'log-loss'});
+
+  return {userWins:userW, oppWins:oppW, win, winPct, log};
+}
+
+// ============================================================
+// OFFSEASON WIZARD — two one-time actions: Swap + Train
+// ============================================================
+
+function startOffseason() {
+  // Generate a fresh pool for swapping — new market every offseason
+  generateSeasonPool();
+  state.os = {
+    actionChosen: null,
+    confirmPending: null, // 'swap' | 'train' | 'skip' — waiting for yes/no
+    swapDone: false, trainDone: false,
+    dropIds: [], addIds: [],
+    trainId: null, trainRoll: null,
+  };
+  showScreen('screen-offseason');
+  renderOffseason();
+}
+
+function renderOffseason() {
+  const content = document.getElementById('os-step-content');
+  const nextBtn = document.getElementById('os-next-season-btn');
+  const done = state.os.swapDone || state.os.trainDone;
+  nextBtn.style.display = done ? '' : 'none';
+
+  // ── STEP 1: Pick an action ──────────────────────────────────
+  if(!state.os.actionChosen && !done) {
+
+    // Confirmation pending — show the "are you sure?" card
+    if(state.os.confirmPending) {
+      const pending = state.os.confirmPending;
+      const labels = {
+        swap:  { icon:'🔄', title:'Roster Swap',    body:'You\'ll release 1–2 players and sign replacements from this season\'s randomized market. <strong>You cannot switch to Training Camp after this.</strong>', btn:'Lock In — Swap →' },
+        train: { icon:'💪', title:'Training Camp',  body:'One player gets a stat boost of +1–8 pts. <strong>You cannot switch to Roster Swap after this.</strong>', btn:'Lock In — Train →' },
+        skip:  { icon:'⏭️', title:'Skip Offseason', body:'Your roster goes into next season exactly as-is. <strong>No changes can be made after confirming.</strong>', btn:'Confirm — Skip →' },
+      };
+      const l = labels[pending];
+      content.innerHTML = `
+        <div class="card" style="max-width:480px;margin:0 auto;text-align:center;padding:2rem;">
+          <div style="font-size:48px;margin-bottom:1rem;">${l.icon}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;margin-bottom:0.75rem;">${l.title}</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:1.75rem;">${l.body}</div>
+          <div style="display:flex;gap:12px;justify-content:center;">
+            <button class="btn" onclick="osCancelConfirm()">← Go back</button>
+            <button class="btn btn-primary" onclick="osConfirmChoice('${pending}')">${l.btn}</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Default: show the three choice cards
+    content.innerHTML = `
+      <div class="os-move-cards">
+        <div class="os-move-card" onclick="osChooseAction('swap')">
+          <div class="os-icon">🔄</div>
+          <h3>Roster Swap</h3>
+          <p>Release 1–2 players and sign replacements from this season's available market. Pool is randomized — slim pickings possible.</p>
+          <span class="os-move-tag">New market each season</span>
+        </div>
+        <div class="os-move-card" onclick="osChooseAction('train')">
+          <div class="os-icon">💪</div>
+          <h3>Training Camp</h3>
+          <p>Invest in one player. Random boost of 1–8 pts applied to their underlying stats. Stacks across seasons.</p>
+          <span class="os-move-tag">+1–8 pts, no cap cost</span>
+        </div>
+        <div class="os-move-card" onclick="osChooseAction('skip')">
+          <div class="os-icon">⏭️</div>
+          <h3>Skip Offseason</h3>
+          <p>Keep the roster exactly as-is heading into next season. No changes.</p>
+          <span class="os-move-tag">Stand pat</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── DONE state ───────────────────────────────────────────────
+  if(done) {
+    const bonuses = calcSynergyBonus(state.roster);
+    const rating = calcTeamRating(state.roster, bonuses).toFixed(1);
+    content.innerHTML = `
+      <div class="card" style="text-align:center;padding:1.5rem;">
+        <div style="font-size:32px;margin-bottom:0.75rem;">🏀</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;margin-bottom:0.5rem;">
+          ${state.os.actionChosen==='skip' ? 'Roster Unchanged' : state.os.actionChosen==='swap' ? 'Swap Complete' : 'Training Complete'}
+        </div>
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:1.25rem;">Heading into Season ${state.season+1} · Team rating: ${rating}</div>
+        ${rosterSummaryHTML()}
+        <div style="margin-top:1rem;font-size:13px;color:var(--text-muted)">
+          Synergies: ${SYNERGIES.filter(s=>s.check(state.roster)).map(s=>`<strong>+${s.bonus}% ${s.name}</strong>`).join(' · ')||'None'}
+        </div>
+      </div>`;
+    return;
+  }
+
+  // ── STEP 2: Execute chosen action ────────────────────────────
+  if(state.os.actionChosen === 'swap') {
+    content.innerHTML = swapSection();
+  } else if(state.os.actionChosen === 'train') {
+    content.innerHTML = trainSection();
+  }
+}
+
+function osChooseAction(action) {
+  // First click sets confirmPending, shows the "are you sure?" card
+  state.os.confirmPending = action;
+  renderOffseason();
+}
+
+function osCancelConfirm() {
+  // Back out of confirmation — return to choice screen
+  state.os.confirmPending = null;
+  renderOffseason();
+}
+
+function osConfirmChoice(action) {
+  // Committed — no going back
+  state.os.confirmPending = null;
+  if(action === 'skip') {
+    state.os.actionChosen = 'skip';
+    state.os.swapDone = true;
+    state.os.trainDone = true;
+    renderOffseason();
+    return;
+  }
+  state.os.actionChosen = action;
+  renderOffseason();
+}
+
+
+// ── SWAP SECTION (standalone function) ──────────────────────
+function swapSection() {
+  const dropPills = state.roster.map(p => {
+    const sel = state.os.dropIds.includes(p.id);
+    const flexPos = PLAYER_FLEX[p.id];
+    const posDisplay = flexPos ? flexPos.join('/') : p.pos;
+    const td = state.roster.length>=2 ? getTeamStats(state.roster).playerDiminish.find(d=>d.id===p.id) : null;
+    let adjHint = '';
+    if(td) {
+      const impacts = [
+        {label:'ppg', diff:td.ptsDiff, adj:td.adjPts},
+        {label:'rpg', diff:td.rebDiff, adj:td.adjReb},
+        {label:'apg', diff:td.astDiff, adj:td.adjAst},
+      ].filter(x=>Math.abs(x.diff)>0.8).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
+      if(impacts[0]) {
+        const col = impacts[0].diff < 0 ? 'var(--red)' : 'var(--green)';
+        adjHint = `<div style="font-size:11px;color:${col};margin-top:2px">${impacts[0].adj}${impacts[0].label} adj</div>`;
+      }
+    }
+    return `<div class="os-player-pill ${sel?'selected':''}" onclick="osToggleDrop(${p.id})">
+      <div class="pname">${p.name}</div>
+      <div class="pmeta">${posDisplay} · ${p.team.split('/')[0]} · ${p.decade}</div>
+      <div class="pval" style="color:${tierColor(p.tier)}">${p.pts_val} pts</div>
+      ${adjHint}
+    </div>`;
+  }).join('');
+
+  const currentIds = new Set(state.roster.map(p=>p.id));
+  const budgetUsed = state.roster.reduce((s,p)=>s+p.pts_val,0);
+  const dropPts = state.os.dropIds.reduce((s,id)=>{ const p=state.roster.find(x=>x.id===id); return s+(p?p.pts_val:0); },0);
+  const budgetAfterDrop = budgetUsed - dropPts;
+  const swapPoolIds = new Set(getPool().map(p=>p.id));
+
+  const available = PLAYERS.filter(p => {
+    if(currentIds.has(p.id)) return false;
+    const newBudget = budgetAfterDrop + p.pts_val +
+      state.os.addIds.reduce((s,id)=>{ const x=PLAYERS.find(y=>y.id===id); return s+(x?x.pts_val:0); },0);
+    if(newBudget > BUDGET_MAX) return false;
+    const tempRoster = state.roster.filter(x=>!state.os.dropIds.includes(x.id));
+    const alreadyAdding = state.os.addIds.map(id=>PLAYERS.find(y=>y.id===id)).filter(Boolean);
+    const combined = [...tempRoster, ...alreadyAdding];
+    if(p.tier===1 && combined.filter(x=>x.tier===1).length>=TIER1_MAX) return false;
+    if(p.tier===2 && combined.filter(x=>x.tier===2).length>=TIER2_MAX) return false;
+    return true;
+  }).sort((a,b) => {
+    const aA = swapPoolIds.has(a.id)?0:1, bA = swapPoolIds.has(b.id)?0:1;
+    return aA!==bA ? aA-bA : b.pts_val-a.pts_val;
+  });
+
+  const canAddMore = state.os.dropIds.length > state.os.addIds.length;
+  const addPills = available.map(p => {
+    const sel = state.os.addIds.includes(p.id);
+    const unavailable = !swapPoolIds.has(p.id) && !sel;
+    const clickable = !unavailable && (sel || canAddMore);
+    const overlay = unavailable ? `
+      <div style="position:absolute;inset:0;border-radius:8px;background:rgba(0,0,0,0.55);pointer-events:none;display:flex;align-items:center;justify-content:center;">
+        <div style="width:80%;height:2px;background:rgba(255,80,80,0.7);transform:rotate(-12deg);border-radius:2px;"></div>
+      </div>
+      <div style="position:absolute;top:4px;right:4px;font-size:10px;color:rgba(255,100,100,0.9);font-weight:600;background:rgba(0,0,0,0.5);padding:1px 4px;border-radius:3px;">N/A</div>` : '';
+    return `<div class="player-card ${sel?'selected':''} ${!clickable?'disabled':''}"
+      onclick="${clickable?`osToggleAdd(${p.id})`:''}"
+      style="position:relative;${unavailable?'opacity:0.45;':''}">
+      ${overlay}
+      <div class="player-tier"><span class="tier-badge ${tierClass(p.tier)}" style="font-size:10px;padding:2px 5px">T${p.tier}</span></div>
+      <div class="player-name" style="${unavailable?'text-decoration:line-through;color:var(--text-muted);':''}">${p.name}</div>
+      <div class="player-meta">${PLAYER_FLEX[p.id]?PLAYER_FLEX[p.id].join('/'):p.pos} · ${p.team.split('/')[0]} · ${p.decade}</div>
+      <div class="player-pts" style="color:${tierColor(p.tier)}">${p.pts_val} pts</div>
+      <div class="player-stats">${p.pts}ppg · ${p.reb}rpg · ${p.ast}apg</div>
+    </div>`;
+  }).join('');
+
+  const swapReady = state.os.dropIds.length > 0 && state.os.dropIds.length === state.os.addIds.length;
+  const preview = swapReady ? (() => {
+    const outs = state.os.dropIds.map(id=>state.roster.find(p=>p.id===id));
+    const ins  = state.os.addIds.map(id=>PLAYERS.find(p=>p.id===id));
+    return `<div class="os-confirm-banner">${outs.map((p,i)=>`Release <strong>${p.name}</strong> · Sign <strong>${ins[i]?.name}</strong>`).join('<br>')}</div>`;
+  })() : '';
+
+  // ── LIVE PREVIEW PANEL ───────────────────────────────────────
+  // Build projected roster: current - drops + adds
+  const projRoster = [
+    ...state.roster.filter(p => !state.os.dropIds.includes(p.id)),
+    ...state.os.addIds.map(id => PLAYERS.find(p=>p.id===id)).filter(Boolean),
+  ];
+  const projBudget = projRoster.reduce((s,p)=>s+p.pts_val,0);
+
+  const curBonuses  = calcSynergyBonus(state.roster);
+  const projBonuses = projRoster.length === 5 ? calcSynergyBonus(projRoster) : null;
+  const curRating   = calcTeamRating(state.roster, curBonuses);
+  const projRating  = projRoster.length === 5 ? calcTeamRating(projRoster, projBonuses) : null;
+
+  const ratingDiff  = projRating !== null ? projRating - curRating : null;
+  const ratingColor = ratingDiff === null ? 'var(--text-muted)' : ratingDiff > 0 ? 'var(--green)' : ratingDiff < 0 ? 'var(--red)' : 'var(--text-muted)';
+  const ratingSign  = ratingDiff !== null && ratingDiff > 0 ? '+' : '';
+
+  // Synergy diff: gained / lost / unchanged
+  const ALL_SYN_IDS = SYNERGIES.map(s=>s.id);
+  const curActive  = new Set(SYNERGIES.filter(s=>s.check(state.roster)).map(s=>s.id));
+  const projActive = projRoster.length===5 ? new Set(SYNERGIES.filter(s=>s.check(projRoster)).map(s=>s.id)) : null;
+
+  const synRows = SYNERGIES.map(s => {
+    const wasBefore = curActive.has(s.id);
+    const willBe    = projActive ? projActive.has(s.id) : null;
+    const gained    = !wasBefore && willBe === true;
+    const lost      = wasBefore && willBe === false;
+    const unchanged = wasBefore && willBe === true;
+    if(!wasBefore && !gained) return null; // not active, not gaining — hide
+    let badge = '', color = 'var(--text-muted)';
+    if(gained)    { badge = '▲ gained'; color = 'var(--green)'; }
+    else if(lost) { badge = '▼ lost';   color = 'var(--red)'; }
+    else          { badge = '✓ active'; color = 'var(--text-muted)'; }
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span style="color:${lost?'var(--text-dim)':'var(--text)'}${lost?';text-decoration:line-through;':''}">${s.name} <span style="color:var(--text-dim)">+${s.bonus}%</span></span>
+      <span style="color:${color};font-size:12px;font-weight:600">${badge}</span>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  // Also show newly-available synergies (not active now but would be)
+  const newSynRows = projActive ? SYNERGIES.filter(s => !curActive.has(s.id) && projActive.has(s.id)).map(s =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span style="color:var(--green)">${s.name} <span style="color:var(--text-dim)">+${s.bonus}%</span></span>
+      <span style="color:var(--green);font-size:12px;font-weight:600">▲ gained</span>
+    </div>`
+  ).join('') : '';
+
+  const previewPanel = `
+    <div style="margin-top:1rem;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Live Preview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div class="stat-box">
+          <div class="sval" style="font-size:18px">${curRating.toFixed(1)}</div>
+          <div class="slbl">Current rating</div>
+        </div>
+        <div class="stat-box">
+          <div class="sval" style="font-size:18px;color:${ratingColor}">${projRating !== null ? projRating.toFixed(1) : '—'}</div>
+          <div class="slbl">Projected rating</div>
+        </div>
+        <div class="stat-box">
+          <div class="sval" style="font-size:18px;color:${ratingColor}">${ratingDiff !== null ? ratingSign+ratingDiff.toFixed(1) : '—'}</div>
+          <div class="slbl">Difference</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div class="stat-box">
+          <div class="sval" style="font-size:18px">${budgetUsed} pts</div>
+          <div class="slbl">Current budget</div>
+        </div>
+        <div class="stat-box">
+          <div class="sval" style="font-size:18px;color:${projBudget>BUDGET_MAX?'var(--red)':projBudget===budgetUsed?'var(--text-muted)':projBudget>budgetUsed?'var(--amber)':'var(--green)'}">${projRoster.length > 0 ? projBudget+' / '+BUDGET_MAX+' pts' : '—'}</div>
+          <div class="slbl">Projected budget</div>
+        </div>
+      </div>
+      ${synRows || newSynRows ? `
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Synergies</div>
+        ${synRows}${newSynRows}
+      ` : projRoster.length===5 ? '<div style="font-size:13px;color:var(--text-muted)">No synergy changes</div>' : ''}
+    </div>`;
+
+  return `<div class="os-action-card">
+    <div class="os-action-header" style="margin-bottom:0.75rem;">
+      <div>
+        <div class="os-action-title">🔄 Roster Swap</div>
+        <div class="os-action-sub">Release 1–2 players. N/A = not in this season's pool.</div>
+      </div>
+    </div>
+    <div class="os-detail">
+      <div class="os-detail-title">Step 1 — select up to 2 players to release</div>
+      <div class="os-roster-pick" style="grid-template-columns:repeat(5,1fr)">${dropPills}</div>
+      ${state.os.dropIds.length > 0 ? `
+        <div class="os-detail-title" style="margin-top:1rem;">Step 2 — sign ${state.os.dropIds.length} replacement${state.os.dropIds.length>1?'s':''}</div>
+        <div class="player-grid" style="max-height:300px">${addPills}</div>` :
+        `<div style="font-size:13px;color:var(--text-muted);margin-top:0.5rem;">Select a player to release first.</div>`}
+      ${previewPanel}
+      ${preview}
+    </div>
+    <div class="section-actions" style="margin-top:1rem;gap:10px;">
+      ${swapReady ? `<button class="btn btn-primary" onclick="osConfirmSwap()">Confirm Swap →</button>` : ''}
+      ${state.os.dropIds.length > 0 ? `<button class="btn" onclick="osClearSwap()">Clear</button>` : ''}
+    </div>
+  </div>`;
+}
+
+// ── TRAIN SECTION (standalone function) ─────────────────────
+function trainSection() {
+  const pills = state.roster.map(p => {
+    const pastBoost = (state.boosts[p.id]||{}).total||0;
+    const sel = state.os.trainId === p.id;
+    return `<div class="os-player-pill ${sel?'selected':''}" onclick="osSelectTrain(${p.id})">
+      <div class="pname">${p.name}</div>
+      <div class="pmeta">${p.pos} · ${p.team.split('/')[0]} · ${p.decade}</div>
+      <div class="pval" style="color:${tierColor(p.tier)}">${p.pts_val} pts${pastBoost>0?` <span style="font-size:11px;color:var(--green)">+${pastBoost} prev</span>`:''}</div>
+    </div>`;
+  }).join('');
+
+  const preview = state.os.trainId ? (() => {
+    const p = state.roster.find(x=>x.id===state.os.trainId);
+    const roll = state.os.trainRoll;
+    return `<div class="os-confirm-banner">
+      <strong>${p.name}</strong> — Boost rolled: <strong>+${roll} pts</strong> ${roll>=6?' 🔥 great session!':roll>=4?' (avg)':' (tough camp)'}<br>
+      <span style="font-size:12px;color:var(--text-muted)">All stats scale proportionally.</span>
+    </div>`;
+  })() : `<div style="font-size:13px;color:var(--text-muted);margin-top:0.5rem;">Select a player to train.</div>`;
+
+  return `<div class="os-action-card">
+    <div class="os-action-header" style="margin-bottom:0.75rem;">
+      <div>
+        <div class="os-action-title">💪 Training Camp</div>
+        <div class="os-action-sub">One player gets an intensive offseason. Random +1–8 pts (4–5 most likely).</div>
+      </div>
+    </div>
+    <div class="os-detail">
+      <div class="os-detail-title">Who trains this offseason?</div>
+      <div class="os-roster-pick" style="grid-template-columns:repeat(5,1fr)">${pills}</div>
+      ${preview}
+    </div>
+    <div class="section-actions" style="margin-top:1rem;">
+      ${state.os.trainId ? `<button class="btn btn-primary" onclick="osConfirmTrain()">Confirm Training →</button>` : ''}
+    </div>
+  </div>`;
+}
+
+
+// ── SWAP ACTIONS ──────────────────────────────────────────────
+function osToggleDrop(id) {
+  const idx = state.os.dropIds.indexOf(id);
+  if(idx >= 0) {
+    state.os.dropIds.splice(idx, 1);
+    // if we deselect a drop, also clear corresponding add
+    if(state.os.addIds.length > state.os.dropIds.length) {
+      state.os.addIds.pop();
+    }
+  } else {
+    if(state.os.dropIds.length >= 2) return;
+    state.os.dropIds.push(id);
+  }
+  renderOffseason();
+}
+
+function osToggleAdd(id) {
+  const idx = state.os.addIds.indexOf(id);
+  if(idx >= 0) {
+    state.os.addIds.splice(idx, 1);
+  } else {
+    if(state.os.addIds.length >= state.os.dropIds.length) return;
+    state.os.addIds.push(id);
+  }
+  renderOffseason();
+}
+
+function osClearSwap() {
+  state.os.dropIds = [];
+  state.os.addIds = [];
+  renderOffseason();
+}
+
+function osSkipSwap() {
+  state.os.swapDone = true;
+  state.os.dropIds = [];
+  state.os.addIds = [];
+  renderOffseason();
+}
+
+function osConfirmSwap() {
+  if(state.os.dropIds.length === 0 || state.os.dropIds.length !== state.os.addIds.length) return;
+  state.os.dropIds.forEach((dropId, i) => {
+    state.roster = state.roster.filter(p=>p.id!==dropId);
+    delete state.boosts[dropId];
+    state.roster.push({...PLAYERS.find(p=>p.id===state.os.addIds[i])});
+  });
+  // Swap is the chosen action — mark both done so next season button appears
+  state.os.swapDone = true;
+  state.os.trainDone = true;
+  renderOffseason();
+}
+
+// ── TRAIN ACTIONS ─────────────────────────────────────────────
+// Triangular distribution 1-8 peaking at 4-5
+function rollTrainBoost() {
+  // Use sum of two weighted dice to get triangle distribution around 4-5
+  const weights = [0, 1,2,3,4,5,4,3,2];  // index 1-8
+  const total = weights.slice(1).reduce((a,b)=>a+b,0);
+  let r = Math.random() * total;
+  for(let i=1;i<=8;i++) {
+    r -= weights[i];
+    if(r <= 0) return i;
+  }
+  return 5;
+}
+
+function osSelectTrain(id) {
+  state.os.trainId = id;
+  state.os.trainRoll = rollTrainBoost();
+  renderOffseason();
+}
+
+function osSkipTrain() {
+  state.os.trainDone = true;
+  state.os.trainId = null;
+  renderOffseason();
+}
+
+function osConfirmTrain() {
+  if(!state.os.trainId || !state.os.trainRoll) return;
+  const p = state.roster.find(x=>x.id===state.os.trainId);
+  if(!p) return;
+
+  const roll = state.os.trainRoll;
+
+  // Increase underlying stats proportionally based on the pts boost
+  // Proportion: roll/pts_val tells us how much to scale each stat
+  const scale = roll / p.pts_val;
+  p.pts  = parseFloat((p.pts  + p.pts  * scale).toFixed(1));
+  p.reb  = parseFloat((p.reb  + p.reb  * scale).toFixed(1));
+  p.ast  = parseFloat((p.ast  + p.ast  * scale).toFixed(1));
+  p.stl  = parseFloat((p.stl  + p.stl  * scale).toFixed(1));
+  p.blk  = parseFloat((p.blk  + p.blk  * scale).toFixed(1));
+  p.pts_val = p.pts_val + roll;
+
+  // Track accumulated boosts for display
+  if(!state.boosts[p.id]) state.boosts[p.id] = {total: 0};
+  state.boosts[p.id].total = (state.boosts[p.id].total||0) + roll;
+
+  // Train is the chosen action — mark both done so next season button appears
+  state.os.trainDone = true;
+  state.os.swapDone = true;
+  renderOffseason();
+}
+
+function startNextSeason() {
+  state.season++;
+  // Fresh pool for new season — new market, new availability
+  generateSeasonPool();
+  state.playoffTeams = drawPlayoffTeams();
+  state.currentRound = 0;
+  state.roundResults = [];
+  state.gameOver = false;
+  state.champion = false;
+  document.getElementById('sim-log-card').style.display = 'none';
+  document.getElementById('current-matchup-card').style.display = 'none';
+  const el = document.getElementById('season-num');
+  if(el) el.textContent = state.season;
+  showScreen('screen-playoffs');
+  renderBracket();
+  renderCurrentMatchup();
+}
+
+function rosterSummaryHTML() {
+  return `<div style="display:flex;flex-direction:column;gap:6px;text-align:left;">` +
+    state.roster.map(p => {
+      const boost = state.boosts[p.id]||0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:6px;">
+        <div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700">${p.name}</span>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px">${p.pos} · ${p.decade}</span>
+        </div>
+        <span class="tier-badge ${tierClass(p.tier)}">${p.pts_val} pts${boost>0?` <span style="color:var(--green);font-size:11px">▲${boost}</span>`:''}</span>
+      </div>`;
+    }).join('') + `</div>`;
+}
+
+// ============================================================
+// RESULTS (season summary — standings + progression + loss analysis)
+// ============================================================
+function showResults() {
+  showScreen('screen-results');
+  const won = state.champion;
+  const wins = state.roundResults.filter(r=>r.win).length;
+  const bonuses = calcSynergyBonus(state.roster);
+  const rating = calcTeamRating(state.roster, bonuses);
+
+  // Snapshot this season into history
+  state.seasonHistory.push({
+    season: state.season,
+    result: won ? 'Champion' : wins===3?'Finals Loss':wins===2?'Conf. Finals':wins===1?'2nd Round':'1st Round',
+    wins,
+    rating: rating.toFixed(1),
+    roster: state.roster.map(p => ({
+      id:p.id, name:p.name, pos:p.pos, pts_val:p.pts_val,
+      pts:p.pts, reb:p.reb, ast:p.ast, stl:p.stl, blk:p.blk,
+    })),
+  });
+
+  const trophyEmoji = won ? '🏆' : wins>=3?'🥈':wins>=2?'🥉':'💀';
+  const title = won ? 'NBA Champions!' : wins===3?'Finals Loss':wins===2?'Conference Finals Exit':wins===1?'Second Round Exit':'First Round Exit';
+  const sub = won
+    ? `Season ${state.season} — your squad made history.`
+    : `Season ${state.season} ends ${wins}-${state.roundResults.length-wins}.`;
+
+  // ── 5-SEASON LIMIT ───────────────────────────────────────────
+  const isFinalSeason = state.season >= 5;
+  const offseasonBtn = document.getElementById('btn-offseason');
+  if(offseasonBtn) offseasonBtn.style.display = isFinalSeason ? 'none' : '';
+
+  // ── FINAL STANDINGS ──────────────────────────────────────────
+  // Sort by: (1) rounds reached, (2) rating as tiebreaker.
+  //
+  // Round values (higher = further):
+  //   4 = Champion, 3 = Finals loser, 2 = Conf Finals, 1 = won R1, 0 = lost R1
+  //
+  // User: roundsReached = wins (0–4)
+  // Opponents in user's path [0–3]:
+  //   - User beat them at round i → they lost at round i → roundsReached = i (won 0..i-1 rounds)
+  //   - They beat user at round i → they at least won round i → roundsReached = i + 1
+  // Flavor teams [4–6] were in the other half of the bracket.
+  //   - teams[4] and teams[5] played each other in R1 — one of them won, one lost.
+  //     We don't simulate it, so we estimate: higher-rated one reached round 1, lower lost.
+  //   - teams[6] played in R2 of that half — assume they reached round 2.
+  //   This gives them plausible bracket positions rather than "did not play".
+
+  const userRoundsWon = wins;
+
+  const flavor4 = state.playoffTeams[4];
+  const flavor5 = state.playoffTeams[5];
+  const flavor6 = state.playoffTeams[6];
+
+  const allTeams = [
+    { name: getTeamLabel(), rating, roundsReached: userRoundsWon, isUser: true },
+
+    // User's path opponents
+    ...state.playoffTeams.slice(0,4).map((t, i) => {
+      const result = state.roundResults[i];
+      let roundsReached;
+      if(!result) {
+        // User was eliminated before reaching this round — this opponent never played them.
+        // They were seeded into round i of the bracket; assume they lost in their own R1.
+        roundsReached = i > 0 ? i - 1 : 0;
+      } else if(result.win) {
+        // User beat them — eliminated at round i
+        roundsReached = i;
+      } else {
+        // They beat user — advanced at least one further round
+        roundsReached = i + 1;
+      }
+      return { name: t.name, rating: t.rating, roundsReached, isUser: false };
+    }),
+
+    // Flavor teams — simulate their half probabilistically based on rating
+    { name: flavor4.name, rating: flavor4.rating,
+      roundsReached: flavor4.rating >= flavor5.rating ? 1 : 0, isUser: false },
+    { name: flavor5.name, rating: flavor5.rating,
+      roundsReached: flavor5.rating > flavor4.rating ? 1 : 0, isUser: false },
+    { name: flavor6.name, rating: flavor6.rating,
+      roundsReached: 2, isUser: false },  // seeds into R2 of other half
+
+  ].sort((a, b) => {
+    if(b.roundsReached !== a.roundsReached) return b.roundsReached - a.roundsReached;
+    return b.rating - a.rating;
+  });
+
+  const roundLabel = r => {
+    if(r === 4) return '🏆 Champion';
+    if(r === 3) return 'Finals';
+    if(r === 2) return 'Conf. Finals';
+    if(r === 1) return '2nd Round';
+    return '1st Round';
+  };
+
+  const standingsHTML = allTeams.map((t, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:${t.isUser?'var(--accent-light)':'var(--bg3)'};margin-bottom:4px;border:1px solid ${t.isUser?'rgba(37,99,235,0.2)':'var(--border)'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text-muted);width:24px;text-align:center">${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:${t.isUser?'600':'400'};color:${t.isUser?'var(--accent)':'var(--text)'}">${t.name}</div>
+        <div style="font-size:11px;color:var(--text-dim)">${roundLabel(t.roundsReached)}</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--text-muted)">${t.rating.toFixed ? t.rating.toFixed(1) : t.rating}</div>
+    </div>`).join('');
+
+  // ── PLAYER PROGRESSION ───────────────────────────────────────
+  const progressHTML = (() => {
+    if(state.seasonHistory.length < 2) return '<div style="font-size:13px;color:var(--text-muted)">Play more seasons to see progression.</div>';
+    const currentIds = state.roster.map(p=>p.id);
+    return currentIds.map(id => {
+      const rows = state.seasonHistory.map(sh => {
+        const snap = sh.roster.find(p=>p.id===id);
+        if(!snap) return null;
+        return {season:sh.season, pts_val:snap.pts_val, pts:snap.pts, reb:snap.reb, ast:snap.ast};
+      }).filter(Boolean);
+      if(rows.length < 1) return '';
+      const p = state.roster.find(x=>x.id===id);
+      const first = rows[0];
+      const last  = rows[rows.length-1];
+      const trend = last.pts_val > first.pts_val ? `▲ +${last.pts_val-first.pts_val} pts over ${rows.length} seasons` : 'No training yet';
+      return `<div style="padding:8px 10px;background:var(--bg3);border-radius:6px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700">${p?.name||snap?.name}</span>
+          <span style="font-size:12px;color:var(--green)">${trend}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${rows.map(r=>`<div style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--text-muted)">S${r.season}: <strong style="color:var(--text)">${r.pts_val}pts</strong> · ${r.pts}ppg</div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  })();
+
+  // ── LOSS ANALYSIS ─────────────────────────────────────────────
+  const lossAnalysis = (() => {
+    if(won) return '';
+    const lossSeries = state.roundResults.find(r=>!r.win);
+    if(!lossSeries) return '';
+    const opp = state.playoffTeams[state.roundResults.indexOf(lossSeries)];
+    const stats = getTeamStats(state.roster);
+    const bullets = [];
+
+    // Rating gap
+    const gap = parseFloat(lossSeries.oppRating||opp.rating) - rating;
+    if(gap > 8) bullets.push(`Rating gap was significant (${rating.toFixed(1)} vs ${(lossSeries.oppRating||opp.rating)}${typeof lossSeries.oppRating==='string'?'':'.0'}) — outmatched overall`);
+
+    // Scoring overlap
+    const scorers22 = state.roster.filter(p=>p.pts>=22).length;
+    if(scorers22 >= 3) bullets.push(`${scorers22} players averaging 22+ ppg created shot-sharing conflict — adjusted scoring dropped ~${(state.roster.reduce((s,p)=>s+p.pts,0)-parseFloat(stats.pts)).toFixed(0)} pts/g`);
+
+    // Low assists
+    if(parseFloat(stats.ast) < 18) bullets.push(`Team assists (${stats.ast}/g) below the 18/g threshold — isolation offense lost efficiency vs ${opp.name.split(' ').slice(-1)[0]}'s defense`);
+
+    // Weak defense
+    const defTotal = parseFloat(stats.stl)+parseFloat(stats.blk);
+    if(defTotal < 5) bullets.push(`Limited defensive pressure (${stats.stl} stl + ${stats.blk} blk/g) — ${opp.style} took advantage`);
+
+    // Low rebounds
+    if(parseFloat(stats.reb) < 38) bullets.push(`Rebounding (${stats.reb}/g adjusted) let ${opp.name.split(' ').slice(-1)[0]} generate second-chance points`);
+
+    // Opponent style mismatch
+    if(opp.style.includes('defense') && scorers22 >= 2) bullets.push(`${opp.name.split(' ').slice(-1)[0]}'s ${opp.style} neutralized your scoring-heavy lineup`);
+    if(opp.style.includes('fast') && parseFloat(stats.reb) < 40) bullets.push(`Poor rebounding couldn't slow down ${opp.name.split(' ').slice(-1)[0]}'s transition game`);
+
+    if(bullets.length===0) bullets.push(`Competitive series — a few bounces away. Small rating edge to ${opp.name.split(' ').slice(-1)[0]} (${lossSeries.winPct}% win rate per game)`);
+
+    return `<div class="card" style="margin-top:1.5rem;">
+      <div class="card-title">Why You Lost — ${ROUND_NAMES[state.roundResults.indexOf(lossSeries)]}</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:10px">vs. ${lossSeries.opponent}</div>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+        ${bullets.map(b=>`<li style="display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.5;"><span style="color:var(--red);flex-shrink:0;margin-top:1px">✗</span><span>${b}</span></li>`).join('')}
+      </ul>
+    </div>`;
+  })();
+
+  // ── ROUND SUMMARY ─────────────────────────────────────────────
+  const roundSummary = state.roundResults.map((r,i)=>`
+    <div class="opp-card">
+      <div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">${ROUND_NAMES[i]}</div>
+        <div class="opp-name" style="font-size:16px">${r.opponent}</div>
+        ${r.winPct ? `<div style="font-size:11px;color:var(--text-dim)">Win% per game: ${r.winPct}%</div>` : ''}
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:${r.win?'var(--green)':'var(--red)'}">
+        ${r.userScore}–${r.oppScore}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="result-hero">
+      <div class="result-trophy">${trophyEmoji}</div>
+      <div class="result-title display">${title}</div>
+      <div class="result-sub">${sub}</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="sval">${wins}-${state.roundResults.length-wins}</div><div class="slbl">Season Record</div></div>
+      <div class="stat-box"><div class="sval">${rating.toFixed(1)}</div><div class="slbl">Team Rating</div></div>
+      <div class="stat-box"><div class="sval">${bonuses.total}%</div><div class="slbl">Synergy</div></div>
+      <div class="stat-box"><div class="sval">${state.season}</div><div class="slbl">Season</div></div>
+    </div>
+
+    ${lossAnalysis}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+      <div class="card">
+        <div class="card-title">Playoff Run</div>
+        ${roundSummary}
+      </div>
+      <div class="card">
+        <div class="card-title">Final Standings</div>
+        ${standingsHTML}
+      </div>
+    </div>
+
+    ${state.seasonHistory.length >= 1 ? `
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-title">Player Progression</div>
+      ${progressHTML}
+    </div>` : ''}
+
+    ${isFinalSeason ? `
+    <div class="card" style="margin-top:1.5rem;text-align:center;padding:2rem;background:var(--accent-light);border:1px solid rgba(37,99,235,0.2)">
+      <div style="font-size:48px;margin-bottom:0.75rem;">🏁</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;margin-bottom:0.5rem;">Dynasty Complete</div>
+      <div style="font-size:15px;color:var(--text-muted);margin-bottom:1rem;">5 seasons with ${getTeamLabel()} — the run is over.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;">
+        <div class="stat-box"><div class="sval">${state.seasonHistory.filter(s=>s.result==='Champion').length}</div><div class="slbl">Championships</div></div>
+        <div class="stat-box"><div class="sval">${state.seasonHistory.reduce((s,h)=>s+h.wins,0)}-${state.seasonHistory.reduce((s,h)=>s+(4-h.wins),0)}</div><div class="slbl">All-Time Record</div></div>
+        <div class="stat-box"><div class="sval">${Math.max(...state.seasonHistory.map(h=>parseFloat(h.rating))).toFixed(1)}</div><div class="slbl">Peak Rating</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted)">
+        ${state.seasonHistory.map(h=>`<span style="margin:0 4px">S${h.season}: ${h.result}</span>`).join('·')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetGame() {
+  state = {
+    roster: [],
+    season: 1,
+    teamName: 'My All-Stars',
+    seasonPool: [],
+    currentRound: 0,
+    roundResults: [],
+    playoffTeams: [],
+    gameOver: false,
+    champion: false,
+    seasonHistory: [],
+    os: { actionChosen:null, confirmPending:null, swapDone:false, trainDone:false, dropIds:[], addIds:[], trainId:null, trainRoll:null },
+    boosts: {},
+  };
+  selectedLogo = '🏀';
+  const logoEl = document.getElementById('team-logo-display');
+  const nameEl = document.getElementById('team-name-input');
+  if(logoEl) logoEl.textContent = '🏀';
+  if(nameEl) nameEl.value = 'My All-Stars';
+  document.getElementById('sim-log-card').style.display = 'none';
+  document.getElementById('current-matchup-card').style.display = 'none';
+  document.getElementById('search-input').value = '';
+  document.getElementById('pos-filter').value = '';
+  document.getElementById('decade-filter').value = '';
+  document.getElementById('sort-filter').value = 'pts_val';
+  showScreen('screen-draft');
+  updateDraftUI();
+}
+
+// ============================================================
+// TEAM IDENTITY
+// ============================================================
+let selectedLogo = '🏀';
+
+function toggleLogoPicker() {
+  const p = document.getElementById('logo-picker');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+
+function selectLogo(emoji) {
+  selectedLogo = emoji;
+  document.getElementById('team-logo-display').textContent = emoji;
+  document.getElementById('logo-picker').style.display = 'none';
+}
+
+function updateTeamNameDisplays() {
+  const name = state.teamName || 'My All-Stars';
+  const els = document.querySelectorAll('.team-name-display');
+  els.forEach(el => el.textContent = name);
+  const logo = document.querySelectorAll('.team-logo-display');
+  logo.forEach(el => el.textContent = selectedLogo);
+}
+
+function getTeamLabel() {
+  return `${selectedLogo} ${state.teamName || 'My All-Stars'}`;
+}
+
+// ============================================================
+// SCREEN MANAGER
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderPlayerGrid();
+updateDraftUI();
+</script>
+</body>
+</html>
