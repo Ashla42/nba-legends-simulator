@@ -562,94 +562,114 @@
     margin-left: 12px;
   }
 
-  @media (max-width: 600px) {
-    /* Layout */
-    #app { padding: 0.75rem 0.75rem 4rem; }
+  /* ── STICKY ROSTER BAR (mobile) ── */
+  .roster-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0;
+    margin: 0 0 1rem;
+  }
 
-    /* Header */
-    .site-header { padding: 1.25rem 0 1rem; margin-bottom: 1.25rem; }
-    .site-header h1 { font-size: 30px; letter-spacing: 1px; }
-    .site-header .subtitle { font-size: 11px; letter-spacing: 2px; }
+  /* ── FLOATING START BUTTON ── */
+  .start-btn-float {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: none;
+    width: calc(100% - 2rem);
+    max-width: 420px;
+  }
+  .start-btn-float.visible { display: block; }
 
-    /* Draft screen: single column, reordered via flex */
-    .draft-layout {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 1.25rem !important;
-    }
-    /* Hide the two-col grid on mobile — we use flex order instead */
-    .draft-col-left  { order: 5; }  /* player grid goes last */
-    .draft-col-right { order: 1; display: flex; flex-direction: column; gap: 0; }
+  @media (max-width: 640px) {
+    #app { padding: 0 0 6rem; }
 
-    /* Player grid: 2 columns on mobile */
-    .player-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      max-height: 360px;
-    }
-    .player-card { font-size: 13px; }
-    .player-name { font-size: 14px; }
-    .player-pts  { font-size: 18px; }
+    .site-header { padding: 1rem 1rem 0.75rem; margin-bottom: 0; }
+    .site-header h1 { font-size: 26px; letter-spacing: 0.5px; }
+    .site-header .subtitle { font-size: 10px; letter-spacing: 2px; }
 
-    /* Roster slots: 5 across but smaller */
-    .roster-slots { grid-template-columns: repeat(5, 1fr) !important; gap: 5px; }
-    .roster-slot  { min-height: 70px; padding: 6px 4px; }
-    .roster-slot .slot-name { font-size: 11px; }
-    .roster-slot .slot-pts  { font-size: 10px; }
-    .roster-slot .slot-remove { font-size: 10px; }
+    /* Draft layout: single column */
+    .draft-layout { display: flex !important; flex-direction: column !important; gap: 0 !important; }
+    .draft-col-right { order: 1; padding: 0.75rem 0.75rem 0; }
+    .draft-col-left  { order: 2; padding: 0 0.75rem 1rem; }
 
     /* Budget bar */
-    .budget-value { font-size: 22px; }
+    .budget-bar-wrap { margin: 0; border-radius: 0; border-left: none; border-right: none; padding: 0.75rem 0.75rem; }
+    .budget-value { font-size: 20px; }
 
-    /* Tier legend: horizontal scroll */
-    .tier-legend { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
-    .tier-legend::-webkit-scrollbar { display: none; }
+    /* Roster: 5 compact slots in a row */
+    .roster-slots { grid-template-columns: repeat(5,1fr) !important; gap: 4px; margin-bottom: 0.75rem; }
+    .roster-slot  { min-height: 60px; padding: 5px 3px; }
+    .roster-slot .slot-pos  { font-size: 9px; }
+    .roster-slot .slot-name { font-size: 10px; }
+    .roster-slot .slot-pts  { font-size: 9px; }
+    .roster-slot .slot-remove { font-size: 9px; }
 
-    /* Filters: wrap naturally */
-    .filter-row { gap: 6px; }
-    .filter-row input  { min-width: 100%; }
-    .filter-row select { flex: 1; font-size: 12px; padding: 6px 8px; }
+    /* Tier legend: 2 columns of 3 */
+    .tier-legend { display: grid !important; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 0.75rem; }
+    .tier-badge  { font-size: 10px; padding: 3px 6px; white-space: nowrap; }
 
-    /* Stat grid: 2 cols */
-    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .stat-box .sval { font-size: 22px; }
+    /* Filters */
+    .filter-row { gap: 5px; margin-bottom: 0.75rem; }
+    .filter-row input  { width: 100%; min-width: 0; }
+    .filter-row select { flex: 1; font-size: 11px; padding: 5px 6px; }
 
-    /* Offseason choice cards: stack vertically */
-    .os-move-cards { grid-template-columns: 1fr !important; gap: 10px; }
-    .os-move-card { padding: 1rem; display: flex; gap: 12px; align-items: flex-start; }
-    .os-move-card .os-icon { font-size: 24px; margin-bottom: 0; flex-shrink: 0; margin-top: 2px; }
-    .os-move-card h3 { font-size: 18px; margin-bottom: 4px; }
-    .os-move-card p  { font-size: 13px; }
+    /* Player grid: 2 columns */
+    .player-grid {
+      grid-template-columns: repeat(2,1fr) !important;
+      max-height: 50vh;
+      gap: 6px;
+    }
+    .player-name { font-size: 13px; }
+    .player-pts  { font-size: 18px; }
+    .player-stats { font-size: 10px; }
+    .player-card { padding: 8px; }
 
-    /* Offseason roster pick pills: 3 across */
-    .os-roster-pick { grid-template-columns: repeat(3, 1fr) !important; }
+    /* Draft pool title */
+    .draft-col-left .card-title { font-size: 14px; margin-bottom: 0.5rem; }
+    .draft-col-right .card-title { font-size: 14px; margin-bottom: 0.5rem; }
 
-    /* Result hero */
-    .result-trophy { font-size: 48px; }
-    .result-title  { font-size: 30px; letter-spacing: 1px; }
-    .result-sub    { font-size: 14px; }
+    /* Synergy collapse */
+    #synergy-details summary { font-size: 13px; }
 
-    /* Standings: compact */
-    .standings-row { padding: 5px 8px !important; }
-    .standings-rank { font-size: 14px !important; width: 20px !important; }
-    .standings-name { font-size: 12px !important; }
-    .standings-round { font-size: 10px !important; }
-    .standings-rating { font-size: 13px !important; }
+    /* Penalties panel */
+    #draft-penalties { font-size: 12px; padding: 6px 8px; }
 
-    /* Two-col result layout: stack */
+    /* Offseason choice cards: stack */
+    .os-move-cards { grid-template-columns: 1fr !important; gap: 8px; }
+    .os-move-card { padding: 0.875rem 1rem; display: flex; gap: 10px; align-items: flex-start; }
+    .os-move-card .os-icon { font-size: 22px; margin-bottom: 0; flex-shrink: 0; }
+    .os-move-card h3 { font-size: 16px; margin-bottom: 3px; }
+    .os-move-card p  { font-size: 12px; }
+
+    /* Roster pills in offseason: 3 col */
+    .os-roster-pick { grid-template-columns: repeat(3,1fr) !important; }
+
+    /* Results */
+    .result-trophy { font-size: 44px; }
+    .result-title  { font-size: 26px; }
+    .stat-grid     { grid-template-columns: repeat(2,1fr); gap: 6px; }
+    .stat-box .sval { font-size: 20px; }
     .result-two-col { grid-template-columns: 1fr !important; }
 
-    /* Bracket: horizontal scroll, no shrinking */
-    .bk-wrap { margin: 0 -0.75rem; padding: 0 0.75rem; }
-
-    /* Matchup panel stats table */
-    .matchup-stats-table { font-size: 12px; }
-
-    /* Buttons: full width */
+    /* Buttons */
     .section-actions { flex-direction: column; }
     .section-actions .btn { width: 100%; text-align: center; }
 
-    /* Cards: tighter padding */
-    .card { padding: 1rem; }
+    /* Cards */
+    .card { padding: 0.875rem; }
+
+    /* Start button: hidden inline, shown as float when roster full */
+    #start-playoffs-btn-inline { display: none !important; }
+  }
+
+  @media (min-width: 641px) {
+    #start-playoffs-btn-float { display: none !important; }
   }
 
   /* ── VISUAL BRACKET ── */
@@ -766,8 +786,7 @@
     <div class="draft-layout" style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;">
       <div class="draft-col-left">
         <div class="card-title">Draft Pool</div>
-        <div style="margin-bottom:10px;">
-          <div class="tier-legend">
+        <div class="tier-legend" style="margin-bottom:10px;">
             <span class="tier-badge t1">Tier 1 · 90–100 pts · Max 1</span>
             <span class="tier-badge t2">Tier 2 · 70–89 pts · Max 2</span>
             <span class="tier-badge t3">Tier 3 · 50–69 pts</span>
@@ -775,7 +794,6 @@
             <span class="tier-badge t5">Tier 5 · 10–29 pts</span>
             <span class="tier-badge t6">Tier 6 · &lt;10 pts · Budget savers</span>
           </div>
-        </div>
         <div class="filter-row">
           <input type="text" id="search-input" placeholder="Search players…" oninput="filterPlayers()">
           <select id="pos-filter" onchange="filterPlayers()">
@@ -818,49 +836,29 @@
           <div id="draft-penalty-rows"></div>
         </div>
 
-        <div class="card-title mt2">Team Identity</div>
-        <div style="margin-bottom:1rem;">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <div id="team-logo-display" style="font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer;flex-shrink:0;" onclick="toggleLogoPicker()">🏀</div>
-            <input type="text" id="team-name-input" value="My All-Stars" maxlength="24"
-              oninput="state.teamName=this.value;updateTeamNameDisplays()"
-              style="flex:1;background:var(--surface);border:1px solid var(--border-bright);border-radius:6px;color:var(--text);padding:7px 12px;font-size:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.5px;">
-          </div>
-          <div id="logo-picker" style="display:none;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Pick a logo</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              <span onclick="selectLogo('🏀')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🏀</span>
-              <span onclick="selectLogo('🔥')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🔥</span>
-              <span onclick="selectLogo('⚡')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">⚡</span>
-              <span onclick="selectLogo('🐂')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐂</span>
-              <span onclick="selectLogo('🦅')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦅</span>
-              <span onclick="selectLogo('🦁')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦁</span>
-              <span onclick="selectLogo('🐺')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐺</span>
-              <span onclick="selectLogo('🦊')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦊</span>
-              <span onclick="selectLogo('🐯')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐯</span>
-              <span onclick="selectLogo('🦈')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🦈</span>
-              <span onclick="selectLogo('🐉')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🐉</span>
-              <span onclick="selectLogo('🏆')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🏆</span>
-              <span onclick="selectLogo('💎')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">💎</span>
-              <span onclick="selectLogo('🌟')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🌟</span>
-              <span onclick="selectLogo('🗡️')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🗡️</span>
-              <span onclick="selectLogo('🛡️')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🛡️</span>
-              <span onclick="selectLogo('🎯')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">🎯</span>
-              <span onclick="selectLogo('👑')" style="font-size:22px;cursor:pointer;padding:4px;border-radius:4px;">👑</span>
-            </div>
-          </div>
-        </div>
+        <details id="synergy-details" style="margin-bottom:0.5rem;">
+          <summary style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);cursor:pointer;padding:6px 0;user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+            <span>Synergies</span>
+            <span id="synergy-summary-badge" style="font-size:12px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid rgba(22,163,74,0.2);border-radius:4px;padding:2px 8px;"></span>
+          </summary>
+          <div class="synergy-list" id="synergy-list" style="margin-top:8px;"></div>
+        </details>
 
-        <div class="card-title mt2">Synergies</div>
-        <div class="synergy-list" id="synergy-list"></div>
-
-        <div class="section-actions" style="margin-top:1.5rem;">
+        <div class="section-actions" style="margin-top:1.5rem;" id="start-playoffs-btn-inline">
           <button class="btn btn-primary" id="start-playoffs-btn" onclick="startPlayoffs()" disabled style="width:100%;">
             Start Season 1 of 5 →
           </button>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Floating start button (mobile) -->
+  <div class="start-btn-float" id="start-playoffs-btn-float">
+    <button class="btn btn-primary" onclick="startPlayoffs()" id="start-playoffs-btn-mob" disabled
+      style="width:100%;padding:14px 24px;font-size:17px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+      Start Season 1 of 5 →
+    </button>
   </div>
 
   <!-- ===== SCREEN 2: BRACKET / SIM ===== -->
@@ -880,10 +878,6 @@
       </div>
     </div>
 
-    <div class="card mt2" id="sim-log-card" style="display:none;">
-      <div class="card-title">Game Log</div>
-      <div class="sim-log" id="sim-log"></div>
-    </div>
   </div>
 
   <!-- ===== SCREEN 3: SEASON RESULTS ===== -->
@@ -1381,14 +1375,24 @@ function togglePlayer(id) {
 // RENDER: ROSTER + BUDGET
 // ============================================================
 function updateDraftUI() {
-  // Generate pool if not yet done (first load)
   if(state.seasonPool.length === 0) generateSeasonPool();
   renderPlayerGrid();
   renderRoster();
   renderSynergies();
   renderDraftPenalties();
   updateBudget();
-  document.getElementById('start-playoffs-btn').disabled = state.roster.length!==5;
+  const ready = state.roster.length === 5;
+  // Desktop start button
+  const btn = document.getElementById('start-playoffs-btn');
+  if(btn) btn.disabled = !ready;
+  // Mobile floating start button
+  const floatBtn = document.getElementById('start-playoffs-btn-mob');
+  const floatWrap = document.getElementById('start-playoffs-btn-float');
+  if(floatBtn) floatBtn.disabled = !ready;
+  if(floatWrap) {
+    floatWrap.classList.toggle('visible', ready);
+    floatWrap.style.display = ready ? 'block' : 'none';
+  }
 }
 
 function renderDraftPenalties() {
@@ -1497,16 +1501,32 @@ function assignPositions(roster) {
 
 function renderSynergies() {
   const el = document.getElementById('synergy-list');
-  if(state.roster.length===0){ el.innerHTML='<div style="font-size:12px;color:var(--text-dim)">Select players to see synergies</div>'; return; }
+  const badge = document.getElementById('synergy-summary-badge');
+  if(!el) return;
+
+  if(state.roster.length===0) {
+    el.innerHTML='<div style="font-size:12px;color:var(--text-dim)">Select players to unlock synergies</div>';
+    if(badge) badge.textContent = '';
+    return;
+  }
+
+  const active = SYNERGIES.filter(syn => state.roster.length>=2 && syn.check(state.roster));
+  const total = active.reduce((s,syn)=>s+syn.bonus,0);
+
+  if(badge) {
+    badge.textContent = total > 0 ? `+${total}% active` : 'none active';
+    badge.style.color = total > 0 ? 'var(--green)' : 'var(--text-dim)';
+    badge.style.background = total > 0 ? 'var(--green-bg)' : 'var(--bg3)';
+    badge.style.borderColor = total > 0 ? 'rgba(22,163,74,0.2)' : 'var(--border)';
+  }
+
+  // Compact one-liner synergy rows
   el.innerHTML = SYNERGIES.map(syn => {
-    const active = state.roster.length>=2 && syn.check(state.roster);
-    return `<div class="synergy-item ${active?'active':''}">
-      <div class="synergy-dot"></div>
-      <div>
-        <div class="synergy-name">${syn.name}</div>
-        <div style="font-size:11px;color:var(--text-dim)">${syn.desc}</div>
-      </div>
-      <div class="synergy-bonus">${active?'+'+syn.bonus+'%':'—'}</div>
+    const isActive = state.roster.length>=2 && syn.check(state.roster);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:${isActive?'var(--green-bg)':'var(--bg3)'};border:1px solid ${isActive?'rgba(22,163,74,0.2)':'var(--border)'};margin-bottom:4px;">
+      <div style="width:6px;height:6px;border-radius:50%;background:${isActive?'var(--green)':'var(--border-bright)'};flex-shrink:0;"></div>
+      <div style="flex:1;font-size:12px;font-weight:500;color:${isActive?'var(--text)':'var(--text-muted)'};">${syn.name}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${isActive?'var(--green)':'var(--text-dim)'};">${isActive?'+'+syn.bonus+'%':'—'}</div>
     </div>`;
   }).join('');
 }
@@ -2008,10 +2028,6 @@ function simulateCurrentRound() {
   const myRating = calcTeamRating(state.roster, bonuses);
   const oppEffective = opp.rating * (0.96 + Math.random() * 0.08);
 
-  document.getElementById('sim-log-card').style.display = 'block';
-  const log = document.getElementById('sim-log');
-  log.innerHTML = '';
-
   const series = simulateSeries(myRating, oppEffective, opp, ri);
 
   state.roundResults[ri] = {
@@ -2024,9 +2040,6 @@ function simulateCurrentRound() {
     winPct: series.winPct,
     log: series.log,
   };
-
-  log.innerHTML = series.log.map(entry => `<div class="log-entry ${entry.cls}">${entry.text}</div>`).join('');
-  log.scrollTop = log.scrollHeight;
 
   if(!series.win) {
     state.gameOver = true;
@@ -2572,7 +2585,7 @@ function startNextSeason() {
   state.roundResults = [];
   state.gameOver = false;
   state.champion = false;
-  document.getElementById('sim-log-card').style.display = 'none';
+  
   document.getElementById('current-matchup-card').style.display = 'none';
   const el = document.getElementById('season-num');
   if(el) el.textContent = state.season;
@@ -2856,7 +2869,7 @@ function resetGame() {
   const nameEl = document.getElementById('team-name-input');
   if(logoEl) logoEl.textContent = '🏀';
   if(nameEl) nameEl.value = 'My All-Stars';
-  document.getElementById('sim-log-card').style.display = 'none';
+  
   document.getElementById('current-matchup-card').style.display = 'none';
   document.getElementById('search-input').value = '';
   document.getElementById('pos-filter').value = '';
@@ -2891,7 +2904,7 @@ function updateTeamNameDisplays() {
 }
 
 function getTeamLabel() {
-  return `${selectedLogo} ${state.teamName || 'My All-Stars'}`;
+  return 'Your Team';
 }
 
 // ============================================================
