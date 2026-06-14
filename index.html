@@ -786,7 +786,11 @@
     <div class="draft-layout" style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;">
       <div class="draft-col-left">
         <div class="card-title">Draft Pool</div>
-        <div class="tier-legend" style="margin-bottom:10px;">
+        <details style="margin-bottom:0.75rem;">
+          <summary style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:4px 0;user-select:none;">
+            <span>Tier Guide</span><span>▼</span>
+          </summary>
+          <div class="tier-legend" style="margin-top:8px;margin-bottom:4px;">
             <span class="tier-badge t1">Tier 1 · 90–100 pts · Max 1</span>
             <span class="tier-badge t2">Tier 2 · 70–89 pts · Max 2</span>
             <span class="tier-badge t3">Tier 3 · 50–69 pts</span>
@@ -794,8 +798,12 @@
             <span class="tier-badge t5">Tier 5 · 10–29 pts</span>
             <span class="tier-badge t6">Tier 6 · &lt;10 pts · Budget savers</span>
           </div>
+        </details>
         <div class="filter-row">
-          <input type="text" id="search-input" placeholder="Search players…" oninput="filterPlayers()">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;white-space:nowrap;">
+            <input type="checkbox" id="available-only" onchange="filterPlayers()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
+            Available only
+          </label>
           <select id="pos-filter" onchange="filterPlayers()">
             <option value="">All positions</option>
             <option value="PG">PG</option>
@@ -830,11 +838,13 @@
         <div class="card-title">Your Roster</div>
         <div class="roster-slots" id="roster-display" style="grid-template-columns:1fr 1fr 1fr;"></div>
 
-        <!-- Persistent penalty flags — always visible, updated on every pick -->
-        <div id="draft-penalties" style="display:none;margin-bottom:1rem;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Stat adjustments</div>
-          <div id="draft-penalty-rows"></div>
-        </div>
+        <!-- Persistent penalty flags — collapsible -->
+        <details id="draft-penalties-details" style="display:none;margin-bottom:0.75rem;">
+          <summary style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--amber-bg);border:1px solid rgba(217,119,6,0.25);border-radius:6px;user-select:none;">
+            <span>⚠ Stat Adjustments</span><span>▼</span>
+          </summary>
+          <div id="draft-penalty-rows" style="padding:8px;background:var(--amber-bg);border:1px solid rgba(217,119,6,0.25);border-top:none;border-radius:0 0 6px 6px;"></div>
+        </details>
 
         <details id="synergy-details" style="margin-bottom:0.5rem;">
           <summary style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);cursor:pointer;padding:6px 0;user-select:none;list-style:none;display:flex;justify-content:space-between;align-items:center;">
@@ -851,33 +861,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Floating start button (mobile only — appears when roster is full) -->
+    <div id="start-playoffs-btn-float" style="display:none;position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:100;width:calc(100% - 2rem);max-width:420px;">
+      <button class="btn btn-primary" onclick="startPlayoffs()" id="start-playoffs-btn-mob" disabled
+        style="width:100%;padding:14px 24px;font-size:17px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        Start Season 1 of 5 →
+      </button>
+    </div>
   </div>
 
-  <!-- Floating start button (mobile) -->
-  <div class="start-btn-float" id="start-playoffs-btn-float">
-    <button class="btn btn-primary" onclick="startPlayoffs()" id="start-playoffs-btn-mob" disabled
-      style="width:100%;padding:14px 24px;font-size:17px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.2);">
-      Start Season 1 of 5 →
-    </button>
-  </div>
-
-  <!-- ===== SCREEN 2: BRACKET / SIM ===== -->
+  <!-- ===== SCREEN 2: PLAYOFFS ===== -->
   <div id="screen-playoffs" class="screen">
-    <div style="margin-bottom:1.5rem;">
-      <div class="card-title" style="margin-bottom:4px;">Playoff Bracket</div>
-      <div style="font-size:14px;color:var(--text-muted)">Season <span id="season-num">1</span> of 5 — simulate each round, then manage your roster in the offseason</div>
+    <div style="margin-bottom:1rem;padding:0 0.25rem;">
+      <div class="card-title" style="margin-bottom:4px;">Season <span id="season-num">1</span> of 5 — Playoffs</div>
+      <div style="font-size:14px;color:var(--text-muted)" id="playoff-subtitle">Win 4 rounds to become champion</div>
     </div>
 
-    <div id="bracket-container"></div>
+    <!-- Collapsible roster panel -->
+    <details id="playoff-roster-details" style="margin-bottom:1rem;">
+      <summary style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);cursor:pointer;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+        <span>Your Roster</span>
+        <span id="playoff-roster-rating" style="font-size:12px;color:var(--accent);font-weight:600;"></span>
+      </summary>
+      <div id="playoff-roster-content" style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;"></div>
+    </details>
 
-    <div class="card mt2" id="current-matchup-card" style="display:none;">
+    <!-- Round progress pills -->
+    <div id="round-progress" style="display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;"></div>
+
+    <!-- Current matchup card -->
+    <div class="card" id="current-matchup-card" style="display:none;">
       <div class="card-title" id="matchup-title">Current Matchup</div>
       <div id="matchup-content"></div>
-      <div class="section-actions">
-        <button class="btn btn-primary" id="simulate-btn" onclick="simulateCurrentRound()">Simulate Round →</button>
+      <div class="section-actions" style="margin-top:1rem;">
+        <button class="btn btn-primary" id="simulate-btn" onclick="simulateCurrentRound()" style="width:100%;">Simulate Round →</button>
       </div>
     </div>
-
   </div>
 
   <!-- ===== SCREEN 3: SEASON RESULTS ===== -->
@@ -1075,19 +1095,19 @@ const SYNERGIES = [
   {
     id:"dynasty",
     name:"Dynasty Bond",
-    desc:"3+ players from the same franchise",
-    bonus:15,
+    desc:"3+ players from the same franchise (e.g. three Lakers, three Bulls)",
+    bonus:8,
     type:"offense",
     check: (roster) => {
-      const teams = roster.map(p=>p.team);
+      const teams = roster.map(p=>p.team.split('/')[0]);
       return teams.some(t => teams.filter(x=>x===t).length>=3);
     }
   },
   {
     id:"era_cohesion",
     name:"Era Cohesion",
-    desc:"3+ players from same decade",
-    bonus:10,
+    desc:"3+ players from the same decade — familiarity breeds chemistry",
+    bonus:5,
     type:"teamwork",
     check: (roster) => {
       const decades = roster.map(p=>p.decade);
@@ -1097,8 +1117,8 @@ const SYNERGIES = [
   {
     id:"balanced_attack",
     name:"Balanced Attack",
-    desc:"5 different positions (PG, SG, SF, PF, C)",
-    bonus:12,
+    desc:"All 5 positions filled (PG, SG, SF, PF, C) — no lineup gaps",
+    bonus:6,
     type:"offense",
     check: (roster) => {
       const positions = new Set(roster.map(p=>p.pos));
@@ -1106,42 +1126,10 @@ const SYNERGIES = [
     }
   },
   {
-    id:"defensive_anchor",
-    name:"Defensive Anchor",
-    desc:"2+ players averaging 2.0+ blocks",
-    bonus:10,
-    type:"defense",
-    check: (roster) => roster.filter(p=>p.blk>=2.0).length>=2
-  },
-  {
-    id:"playmaking_core",
-    name:"Playmaking Core",
-    desc:"2+ players averaging 7+ assists",
-    bonus:8,
-    type:"offense",
-    check: (roster) => roster.filter(p=>p.ast>=7.0).length>=2
-  },
-  {
-    id:"rebounding_machine",
-    name:"Rebounding Machine",
-    desc:"Combined team rebounds 50+ per game",
-    bonus:8,
-    type:"defense",
-    check: (roster) => roster.reduce((s,p)=>s+p.reb,0)>=50
-  },
-  {
-    id:"scoring_explosion",
-    name:"Scoring Explosion",
-    desc:"3+ players averaging 22+ points",
-    bonus:12,
-    type:"offense",
-    check: (roster) => roster.filter(p=>p.pts>=22).length>=3
-  },
-  {
     id:"era_diversity",
     name:"Time Travelers",
-    desc:"Players from 4 different decades",
-    bonus:7,
+    desc:"Players from 4+ different decades — adaptability across eras",
+    bonus:4,
     type:"chemistry",
     check: (roster) => {
       const decades = new Set(roster.map(p=>p.decade));
@@ -1278,18 +1266,17 @@ function tierClass(tier) { return `t${tier}`; }
 // RENDER: PLAYER GRID
 // ============================================================
 function renderPlayerGrid() {
-  const search = document.getElementById('search-input').value.toLowerCase();
+  const availOnly = document.getElementById('available-only')?.checked || false;
   const posF = document.getElementById('pos-filter').value;
   const decF = document.getElementById('decade-filter').value;
-
   const sortKey = document.getElementById('sort-filter').value;
 
   const pool = getPool();
   const poolIds = new Set(pool.map(p=>p.id));
 
-  // Show ALL players — unavailable ones get greyed + strikethrough treatment
+  // Show ALL players (or available-only if checked); unavailable ones get greyed + strikethrough
   const filtered = PLAYERS.filter(p => {
-    if(search && !p.name.toLowerCase().includes(search)) return false;
+    if(availOnly && !poolIds.has(p.id) && !new Set(state.roster.map(x=>x.id)).has(p.id)) return false;
     if(posF && p.pos!==posF) return false;
     if(decF && p.decade!==decF) return false;
     return true;
@@ -1396,12 +1383,12 @@ function updateDraftUI() {
 }
 
 function renderDraftPenalties() {
-  const panel = document.getElementById('draft-penalties');
-  const rows  = document.getElementById('draft-penalty-rows');
-  if(!panel || !rows) return;
+  const details = document.getElementById('draft-penalties-details');
+  const rows    = document.getElementById('draft-penalty-rows');
+  if(!details || !rows) return;
 
   if(state.roster.length < 2) {
-    panel.style.display = 'none';
+    details.style.display = 'none';
     return;
   }
 
@@ -1438,13 +1425,13 @@ function renderDraftPenalties() {
   const top3 = allImpacts.slice(0,3);
 
   if(top3.length === 0) {
-    panel.style.display = 'none';
+    details.style.display = 'none';
     return;
   }
 
-  panel.style.display = 'block';
+  details.style.display = 'block';
   rows.innerHTML = top3.map(x =>
-    `<div style="font-size:13px;color:var(--text-muted);padding:3px 0;line-height:1.5">${x.text}</div>`
+    `<div style="font-size:13px;color:var(--amber);padding:3px 0;line-height:1.5">${x.text}</div>`
   ).join('');
 }
 
@@ -1452,8 +1439,9 @@ function renderRoster() {
   const el = document.getElementById('roster-display');
   const slots = assignPositions(state.roster);
 
-  el.innerHTML = slots.map((entry) => {
-    if(!entry) return `<div class="roster-slot"><span class="empty-label">Empty</span></div>`;
+  el.innerHTML = slots.map((entry, i) => {
+    const positions = ['PG','SG','SF','PF','C'];
+    if(!entry) return `<div class="roster-slot"><span class="empty-label">${positions[i]}<br><span style="font-size:9px">Empty</span></span></div>`;
     const {p, assignedPos} = entry;
     const isFlex = assignedPos !== p.pos;
     return `<div class="roster-slot filled">
@@ -1523,7 +1511,7 @@ function renderSynergies() {
   // Compact one-liner synergy rows
   el.innerHTML = SYNERGIES.map(syn => {
     const isActive = state.roster.length>=2 && syn.check(state.roster);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:${isActive?'var(--green-bg)':'var(--bg3)'};border:1px solid ${isActive?'rgba(22,163,74,0.2)':'var(--border)'};margin-bottom:4px;">
+    return `<div title="${syn.desc}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:${isActive?'var(--green-bg)':'var(--bg3)'};border:1px solid ${isActive?'rgba(22,163,74,0.2)':'var(--border)'};margin-bottom:4px;cursor:help;">
       <div style="width:6px;height:6px;border-radius:50%;background:${isActive?'var(--green)':'var(--border-bright)'};flex-shrink:0;"></div>
       <div style="flex:1;font-size:12px;font-weight:500;color:${isActive?'var(--text)':'var(--text-muted)'};">${syn.name}</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:${isActive?'var(--green)':'var(--text-dim)'};">${isActive?'+'+syn.bonus+'%':'—'}</div>
@@ -1682,29 +1670,35 @@ function getTeamStats(roster) {
 // ============================================================
 // PLAYOFF SETUP
 // ============================================================
+// Draw 4 unique opponents for the 4 playoff rounds
+// Difficulty scales by round: R1 easiest, R4 hardest
+// Never draw the same team twice in a season
 function drawPlayoffTeams() {
-  // Weighted random draw of 7 opponents
-  const pool = [...HISTORIC_TEAMS];
+  const ROUND_RANGES = [
+    {min:60, max:72},  // R1 — easier pool
+    {min:68, max:78},  // R2 — mid
+    {min:74, max:83},  // CF — tough
+    {min:78, max:87},  // Finals — hardest
+  ];
   const chosen = [];
-  const weights = pool.map(t=>t.prob);
-  
-  for(let i=0;i<7;i++) {
-    const totalW = weights.reduce((a,b)=>a+b,0);
-    let r = Math.random()*totalW;
-    let idx = 0;
-    while(r > weights[idx] && idx<weights.length-1) { r-=weights[idx]; idx++; }
-    chosen.push(pool[idx]);
-    pool.splice(idx,1);
-    weights.splice(idx,1);
-  }
+  const usedNames = new Set();
+
+  ROUND_RANGES.forEach(range => {
+    const pool = HISTORIC_TEAMS.filter(t =>
+      t.rating >= range.min && t.rating <= range.max && !usedNames.has(t.name)
+    );
+    // fallback to any unused team if pool is thin
+    const fallback = HISTORIC_TEAMS.filter(t => !usedNames.has(t.name));
+    const pick = pool.length > 0 ? pool : fallback;
+    const t = pick[Math.floor(Math.random() * pick.length)];
+    chosen.push(t);
+    usedNames.add(t.name);
+  });
   return chosen;
 }
 
 function startPlayoffs() {
   if(state.roster.length!==5) return;
-  // Sync team name from input
-  const nameEl = document.getElementById('team-name-input');
-  if(nameEl) state.teamName = nameEl.value || 'My All-Stars';
 
   state.playoffTeams = drawPlayoffTeams();
   state.currentRound = 0;
@@ -1716,156 +1710,57 @@ function startPlayoffs() {
   if(el) el.textContent = state.season;
 
   showScreen('screen-playoffs');
-  renderBracket();
+  renderPlayoffRoster();
+  renderRoundProgress();
   renderCurrentMatchup();
 }
 
 // ============================================================
-// BRACKET RENDER — proper visual bracket with connector lines
+// PLAYOFF ROSTER PANEL (collapsible)
 // ============================================================
-function renderBracket() {
-  const container = document.getElementById('bracket-container');
-  const teams = state.playoffTeams;
+function renderPlayoffRoster() {
+  const content = document.getElementById('playoff-roster-content');
+  const badge   = document.getElementById('playoff-roster-rating');
+  if(!content) return;
+  const bonuses = calcSynergyBonus(state.roster);
+  const rating  = calcTeamRating(state.roster, bonuses).toFixed(1);
+  if(badge) badge.textContent = `Rating: ${rating}`;
 
-  // Bracket layout:
-  // Left side (user's path): R1 top, R2, CF, Finals
-  // Right side (other half): R1 bottom, R2 bottom feeds into Finals
-  // playoffTeams[0..3] = user's 4 opponents
-  // playoffTeams[4,5,6] = other half flavor teams
+  const slots = assignPositions(state.roster);
+  content.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">` +
+    slots.map(entry => {
+      if(!entry) return '';
+      const {p, assignedPos} = entry;
+      const isFlex = assignedPos !== p.pos;
+      return `<div style="text-align:center;padding:6px 4px;background:var(--surface);border:1px solid var(--border);border-radius:6px;">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;">${assignedPos}${isFlex?'*':''}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;line-height:1.2;margin:3px 0;">${p.name}</div>
+        <div style="font-size:10px;color:${tierColor(p.tier)};font-weight:600;">${p.pts_val}pts</div>
+      </div>`;
+    }).join('') + `</div>
+    ${bonuses.total>0?`<div style="margin-top:8px;font-size:12px;color:var(--green)">Synergies: ${SYNERGIES.filter(s=>s.check(state.roster)).map(s=>`+${s.bonus}% ${s.name}`).join(' · ')}</div>`:''}`;
+}
 
-  const shortName = t => t.name.replace(/^\d{4}\s/,'').replace('Golden State','GS').replace('Los Angeles','LA').replace('Philadelphia','Philly');
-
-  // Build matchup data for each round of user's path
-  const userPath = [0,1,2,3].map(ri => {
-    const opp = teams[ri];
-    const result = state.roundResults[ri];
-    const future = ri > state.currentRound && !state.roundResults[ri-1]?.win;
-    return { opp, result, ri };
-  });
-
-  // Other half: R1 has teams[4] vs teams[5], winner faces teams[6] in R2
-  const otherR1 = { t1: teams[4], t2: teams[5] };
-  const otherR2 = { t1: teams[6], t2: {name:'Winner Other R1'} };
-
-  // Helper: render one matchup card HTML
-  function matchupCard(topLabel, topScore, topWin, botLabel, botScore, botWin, dimmed, isUser) {
-    const topCls = topWin===true ? 'bk-winner' : topWin===false ? 'bk-loser' : (isUser ? 'bk-user' : '');
-    const botCls = botWin===true ? 'bk-winner' : botWin===false ? 'bk-loser' : '';
-    return `<div class="bk-matchup${dimmed?' bk-dim':''}">
-      <div class="bk-team ${topCls}">
-        <span class="bk-tname">${topLabel}</span>
-        <span class="bk-score">${topScore!==undefined?topScore:''}</span>
-      </div>
-      <div class="bk-team ${botCls}">
-        <span class="bk-tname">${botLabel}</span>
-        <span class="bk-score">${botScore!==undefined?botScore:''}</span>
-      </div>
-    </div>`;
-  }
-
-  // For each of user's rounds
-  function userCard(ri) {
-    const { opp, result } = userPath[ri];
-    const eliminated = state.roundResults.some((r,i) => i < ri && !r.win);
-    const upcoming = ri > state.currentRound;
-    const dimmed = eliminated && upcoming;
-    const topWin = result ? result.win : null;
-    const botWin = result ? !result.win : null;
-
-    // Only show win% for the CURRENT active round — future rounds keep their opponent hidden odds-wise
-    const isCurrent = ri === state.currentRound && !result;
-    let winPctStr = '';
-    if(isCurrent) {
-      const bonuses = calcSynergyBonus(state.roster);
-      const myRating = calcTeamRating(state.roster, bonuses);
-      const spread = myRating - opp.rating;
-      const winPct = Math.round(Math.max(25, Math.min(80, 50 + spread * 1.2)));
-      winPctStr = `<span style="font-size:10px;color:${winPct>=50?'var(--green)':'var(--red)'};margin-left:4px">${winPct}%</span>`;
+// ============================================================
+// ROUND PROGRESS PILLS
+// ============================================================
+function renderRoundProgress() {
+  const el = document.getElementById('round-progress');
+  if(!el) return;
+  el.innerHTML = ROUND_NAMES.map((name, i) => {
+    const result = state.roundResults[i];
+    let bg, color, label;
+    if(result && result.win) {
+      bg='var(--green-bg)'; color='var(--green)'; label=`✓ ${name} ${result.userScore}–${result.oppScore}`;
+    } else if(result && !result.win) {
+      bg='var(--red-bg)'; color='var(--red)'; label=`✗ ${name} ${result.userScore}–${result.oppScore}`;
+    } else if(i === state.currentRound && !state.gameOver) {
+      bg='var(--accent-light)'; color='var(--accent)'; label=`▶ ${name}`;
+    } else {
+      bg='var(--bg3)'; color='var(--text-dim)'; label=name;
     }
-
-    // Future unplayed rounds: show opponent name but dim the card
-    // Already-eliminated path: dim it fully
-    return matchupCard(
-      getTeamLabel() + winPctStr,
-      result ? result.userScore : undefined, topWin,
-      upcoming && !eliminated ? `? — ${ROUND_NAMES[ri]}` : shortName(opp),
-      result ? result.oppScore : undefined, botWin,
-      dimmed, true
-    );
-  }
-
-  // The bracket is rendered as an SVG-adjacent HTML layout with CSS connectors
-  // Structure: 4 columns (R1, QF, SF, Finals) with vertical centering
-  // Left column has 2 matchups (user top, other bottom)
-  // Each subsequent column has fewer, vertically centered to align with merge
-
-  const html = `
-  <div class="bk-wrap">
-    <!-- Round labels -->
-    <div class="bk-labels">
-      <div class="bk-label">First Round</div>
-      <div class="bk-label">Conf. Semis</div>
-      <div class="bk-label">Conf. Finals</div>
-      <div class="bk-label">NBA Finals</div>
-    </div>
-
-    <div class="bk-body">
-      <!-- Column 1: First Round -->
-      <div class="bk-col bk-col-r1">
-        <div class="bk-slot bk-slot-top">
-          ${userCard(0)}
-        </div>
-        <div class="bk-slot bk-slot-bot">
-          ${matchupCard(shortName(otherR1.t1),'',null,shortName(otherR1.t2),'',null,true,false)}
-        </div>
-      </div>
-
-      <!-- Connector 1→2 -->
-      <div class="bk-conn">
-        <div class="bk-conn-top"></div>
-        <div class="bk-conn-mid"></div>
-        <div class="bk-conn-bot"></div>
-      </div>
-
-      <!-- Column 2: Conf. Semis -->
-      <div class="bk-col bk-col-r2">
-        <div class="bk-slot bk-slot-top">
-          ${userCard(1)}
-        </div>
-        <div class="bk-slot bk-slot-bot">
-          ${matchupCard(shortName(otherR2.t1),'',null,'Winner Other R1','',null,true,false)}
-        </div>
-      </div>
-
-      <!-- Connector 2→3 -->
-      <div class="bk-conn">
-        <div class="bk-conn-top"></div>
-        <div class="bk-conn-mid"></div>
-        <div class="bk-conn-bot"></div>
-      </div>
-
-      <!-- Column 3: Conf. Finals -->
-      <div class="bk-col bk-col-cf">
-        <div class="bk-slot bk-slot-only">
-          ${userCard(2)}
-        </div>
-      </div>
-
-      <!-- Connector 3→4 -->
-      <div class="bk-conn bk-conn-single">
-        <div class="bk-conn-straight"></div>
-      </div>
-
-      <!-- Column 4: Finals -->
-      <div class="bk-col bk-col-finals">
-        <div class="bk-slot bk-slot-only">
-          ${userCard(3)}
-        </div>
-      </div>
-    </div>
-  </div>`;
-
-  container.innerHTML = html;
+    return `<div style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:${bg};color:${color};border:1px solid ${color==='var(--text-dim)'?'var(--border)':color};">${label}</div>`;
+  }).join('');
 }
 
 // ============================================================
@@ -1988,15 +1883,18 @@ function renderCurrentMatchup() {
       <div class="stat-box"><div class="sval" style="color:${winPct>=50?'var(--green)':'var(--red)'}">${winPct}%</div><div class="slbl">Win% / game</div></div>
     </div>
     ${warns.length ? `<div style="margin-top:8px;padding:8px 10px;background:var(--amber-bg);border:1px solid rgba(217,119,6,0.3);border-radius:6px;font-size:12px;color:var(--amber)">⚠ ${warns.join(' · ')}</div>` : ''}
-    <div style="margin-top:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-      <div style="padding:6px 10px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);">Stat adjustments per player</div>
-      <div style="padding:8px 10px;">
+    <details style="margin-top:10px;">
+      <summary style="font-size:12px;color:var(--text-muted);cursor:pointer;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+        <span style="text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Stat adjustments per player</span>
+        <span style="font-size:11px;">▼</span>
+      </summary>
+      <div style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;">
         ${diminishRows}
         ${transitionNote}
       </div>
-    </div>
+    </details>
     <div style="font-size:11px;color:var(--text-dim);margin-top:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;line-height:1.6;">
-      Synergy adds ${bonuses.total}% to your rating (${(myRating/(1+bonuses.total/100)).toFixed(1)} base → ${myRating.toFixed(1)} final). Opponent stats are estimated; no synergy applied.
+      Synergy adds ${bonuses.total}% to your rating (${(myRating/(1+bonuses.total/100)).toFixed(1)} base → ${myRating.toFixed(1)} final). Opponent stats estimated.
     </div>
     ${roundDone ? `<div style="margin-top:12px;padding:10px;border-radius:6px;background:${roundDone.win?'var(--green-bg)':'var(--red-bg)'};border:1px solid ${roundDone.win?'var(--green)':'var(--red)'}">
       <span style="color:${roundDone.win?'var(--green)':'var(--red)'}; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:700;">
@@ -2043,17 +1941,23 @@ function simulateCurrentRound() {
 
   if(!series.win) {
     state.gameOver = true;
+    renderRoundProgress();
+    renderCurrentMatchup();
+    window.scrollTo(0,0);
     setTimeout(()=>showResults(), 2000);
   } else if(ri===3) {
     state.champion = true;
     state.gameOver = true;
+    renderRoundProgress();
+    renderCurrentMatchup();
+    window.scrollTo(0,0);
     setTimeout(()=>showResults(), 2000);
   } else {
     state.currentRound++;
+    renderRoundProgress();
+    renderCurrentMatchup();
+    window.scrollTo(0,0);
   }
-
-  renderBracket();
-  renderCurrentMatchup();
 }
 
 function simulateSeries(myRating, oppRating, opp, roundIdx) {
@@ -2578,20 +2482,20 @@ function osConfirmTrain() {
 
 function startNextSeason() {
   state.season++;
-  // Fresh pool for new season — new market, new availability
   generateSeasonPool();
   state.playoffTeams = drawPlayoffTeams();
   state.currentRound = 0;
   state.roundResults = [];
   state.gameOver = false;
   state.champion = false;
-  
-  document.getElementById('current-matchup-card').style.display = 'none';
+
   const el = document.getElementById('season-num');
   if(el) el.textContent = state.season;
   showScreen('screen-playoffs');
-  renderBracket();
+  renderPlayoffRoster();
+  renderRoundProgress();
   renderCurrentMatchup();
+  window.scrollTo(0,0);
 }
 
 function rosterSummaryHTML() {
@@ -2618,17 +2522,19 @@ function showResults() {
   const bonuses = calcSynergyBonus(state.roster);
   const rating = calcTeamRating(state.roster, bonuses);
 
-  // Snapshot this season into history
-  state.seasonHistory.push({
-    season: state.season,
-    result: won ? 'Champion' : wins===3?'Finals Loss':wins===2?'Conf. Finals':wins===1?'2nd Round':'1st Round',
-    wins,
-    rating: rating.toFixed(1),
-    roster: state.roster.map(p => ({
-      id:p.id, name:p.name, pos:p.pos, pts_val:p.pts_val,
-      pts:p.pts, reb:p.reb, ast:p.ast, stl:p.stl, blk:p.blk,
-    })),
-  });
+  // Snapshot this season into history — only once per season
+  if(!state.seasonHistory.find(h=>h.season===state.season)) {
+    state.seasonHistory.push({
+      season: state.season,
+      result: won ? 'Champion' : wins===3?'Finals Loss':wins===2?'Conf. Finals':wins===1?'2nd Round':'1st Round',
+      wins,
+      rating: rating.toFixed(1),
+      roster: state.roster.map(p => ({
+        id:p.id, name:p.name, pos:p.pos, pts_val:p.pts_val,
+        pts:p.pts, reb:p.reb, ast:p.ast, stl:p.stl, blk:p.blk,
+      })),
+    });
+  }
 
   const trophyEmoji = won ? '🏆' : wins>=3?'🥈':wins>=2?'🥉':'💀';
   const title = won ? 'NBA Champions!' : wins===3?'Finals Loss':wins===2?'Conference Finals Exit':wins===1?'Second Round Exit':'First Round Exit';
@@ -2659,39 +2565,20 @@ function showResults() {
 
   const userRoundsWon = wins;
 
-  const flavor4 = state.playoffTeams[4];
-  const flavor5 = state.playoffTeams[5];
-  const flavor6 = state.playoffTeams[6];
-
   const allTeams = [
     { name: getTeamLabel(), rating, roundsReached: userRoundsWon, isUser: true },
-
-    // User's path opponents
     ...state.playoffTeams.slice(0,4).map((t, i) => {
       const result = state.roundResults[i];
       let roundsReached;
       if(!result) {
-        // User was eliminated before reaching this round — this opponent never played them.
-        // They were seeded into round i of the bracket; assume they lost in their own R1.
-        roundsReached = i > 0 ? i - 1 : 0;
+        roundsReached = Math.max(0, i - 1);
       } else if(result.win) {
-        // User beat them — eliminated at round i
         roundsReached = i;
       } else {
-        // They beat user — advanced at least one further round
         roundsReached = i + 1;
       }
       return { name: t.name, rating: t.rating, roundsReached, isUser: false };
     }),
-
-    // Flavor teams — simulate their half probabilistically based on rating
-    { name: flavor4.name, rating: flavor4.rating,
-      roundsReached: flavor4.rating >= flavor5.rating ? 1 : 0, isUser: false },
-    { name: flavor5.name, rating: flavor5.rating,
-      roundsReached: flavor5.rating > flavor4.rating ? 1 : 0, isUser: false },
-    { name: flavor6.name, rating: flavor6.rating,
-      roundsReached: 2, isUser: false },  // seeds into R2 of other half
-
   ].sort((a, b) => {
     if(b.roundsReached !== a.roundsReached) return b.roundsReached - a.roundsReached;
     return b.rating - a.rating;
@@ -2871,7 +2758,8 @@ function resetGame() {
   if(nameEl) nameEl.value = 'My All-Stars';
   
   document.getElementById('current-matchup-card').style.display = 'none';
-  document.getElementById('search-input').value = '';
+  const availEl = document.getElementById('available-only');
+  if(availEl) availEl.checked = false;
   document.getElementById('pos-filter').value = '';
   document.getElementById('decade-filter').value = '';
   document.getElementById('sort-filter').value = 'pts_val';
